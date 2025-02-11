@@ -1,0 +1,65 @@
+header{
+    width: 80%;
+    margin: 0 auto;
+    background-color:#2C69A0;
+
+}
+
+.logo{
+    padding: 10px;
+}
+.chuc-vu{
+    text-align: right;
+    font-size: 20px;
+    color: #FFFFFF;
+    
+}
+/* MENU */
+
+.Menu-container{
+    
+    width: 80%;
+    margin: 0 auto;
+    margin-top: 1px;
+    background-color:#2C69A0;
+    color: #FFFFFF;
+}
+
+/* Định dạng menu ngang */
+.menu {
+    list-style-type: none; /* Xóa dấu chấm trong danh sách */
+    margin: 0;
+    padding: 0;
+    overflow: hidden; /* Đảm bảo menu không bị tràn ra ngoài */
+    
+}
+
+.menu li {
+    float: left; /* Đặt các mục menu ngang */
+}
+
+.menu li a {
+    display: block; /* Đảm bảo các liên kết chiếm toàn bộ chiều rộng của các mục */
+    color: white; /* Màu chữ */
+    text-align: center; /* Căn giữa chữ */
+    padding: 14px 20px; /* Khoảng cách bên trong */
+    text-decoration: none; /* Xóa gạch dưới của liên kết */
+}
+
+.menu li a:hover {
+    color: yellow;
+}
+
+
+
+.Thong-Tin_GV{
+    padding-top: 10px;
+    text-align: right;
+    font-size: 20px;
+}
+
+footer{
+    background-color: #f1f1f1; 
+    padding: 20px; 
+    text-align: center;
+}
