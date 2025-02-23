@@ -1,12 +1,16 @@
+<?php
+// Nạp file config để sử dụng đường dẫn đã  BASE_thiết lập
+require_once '../config.php';
+?>
+
 <!doctype html>
 <html lang="en">
-
 <head>
-    <title>Trang chủ</title>
+    <title>Layout Header User</title>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link rel="stylesheet" href="../Public/style/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/style/style.css">
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
         integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
@@ -20,7 +24,7 @@
         <div class="col-md-12">
             <div class="row">
                 <div class="col-md-1">
-                    <img src="../Public/img/LogoNTU.jpg" alt="logo" width="100px">
+                    <img src="<?php echo BASE_URL?> /Public/img/LogoNTU.jpg" alt="logo" width="100px">
                 </div>
                 <div class="col-md-11" style="padding-top: 10px;">
                     <H3 style="font-size: 23px;color: #FFFFFF;">

@@ -15,7 +15,6 @@ header{
     
 }
 /* MENU */
-
 .Menu-container{
     
     width: 80%;
@@ -25,41 +24,73 @@ header{
     color: #FFFFFF;
 }
 
-/* Định dạng menu ngang */
-.menu {
-    list-style-type: none; /* Xóa dấu chấm trong danh sách */
-    margin: 0;
+.menu, .menu-right{
+    list-style: none;
     padding: 0;
-    overflow: hidden; /* Đảm bảo menu không bị tràn ra ngoài */
+    margin: 0;
+    display: flex;
+}
+
+.menu li, .menu-right li{
+    position: relative;
+}
+
+.menu li a, .menu-right li a {
+    text-decoration: none;
+    color: white;
+    padding: 10px 15px;
+    display: block;
+}
+
+.menu li:hover {
+    background: #444;
     
 }
 
-.menu li {
-    float: left; /* Đặt các mục menu ngang */
+.submenu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #555;
+    display: none;
+    min-width: 150px;
+    z-index: 1;
 }
 
-.menu li a {
-    display: block; /* Đảm bảo các liên kết chiếm toàn bộ chiều rộng của các mục */
-    color: white; /* Màu chữ */
-    text-align: center; /* Căn giữa chữ */
-    padding: 14px 20px; /* Khoảng cách bên trong */
-    text-decoration: none; /* Xóa gạch dưới của liên kết */
+.submenu li {
+    width: 100%;
 }
 
-.menu li a:hover {
-    color: yellow;
+.submenu li a {
+    padding: 10px;
+    display: block;
+    color: white;
 }
 
+.dropdown:hover .submenu {
+    display: block;
 
+}
 
+.menu-right img {
+    width: 25px;
+    height: auto;
+}
+/* Thông tin giảng viên */
 .Thong-Tin_GV{
     padding-top: 10px;
     text-align: right;
-    font-size: 20px;
+    
 }
 
+/* Lịch */
 footer{
     background-color: #f1f1f1; 
     padding: 20px; 
     text-align: center;
+    
 }
+

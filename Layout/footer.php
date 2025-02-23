@@ -1,14 +1,19 @@
+<?php
+// Nạp file config để sử dụng đường dẫn đã thiết lập
+require_once '../config.php';
+
+?>
 <!doctype html>
 <html lang="en">
 
 <head>
-    <title>Title</title>
+    <title>Layout footer user</title>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="../Public/style/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/style/style.css">
 </head>
 
 <body>
