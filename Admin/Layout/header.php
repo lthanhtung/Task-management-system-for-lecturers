@@ -1,5 +1,5 @@
 <?php
-require_once '../config.php';
+require_once '../../config.php';
 ?>
 
 
@@ -9,7 +9,6 @@ require_once '../config.php';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Dashboard</title>
 
     <!-- Google Font: Source Sans Pro -->
     <link rel="stylesheet"
@@ -227,19 +226,19 @@ require_once '../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Product")" class="nav-link">
+                                    <a href="../work/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách công việc</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Category")" class="nav-link">
+                                    <a href="../work/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Tạo công việc</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Supplier")" class="nav-link">
+                                    <a href="#" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Vai trò công việc</p>
                                     </a>
@@ -265,13 +264,13 @@ require_once '../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Post")" class="nav-link">
+                                    <a href="../lecturer/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách giảng viên</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Topic")" class="nav-link">
+                                    <a href="../lecturer/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm giảng viên</p>
                                     </a>
@@ -311,6 +310,8 @@ require_once '../config.php';
             <!-- /.sidebar -->
         </aside>
     </div>
+    
+
     <!-- ./wrapper -->
 
     <!-- jQuery -->
