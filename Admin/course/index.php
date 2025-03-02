@@ -1,8 +1,11 @@
 <?php
+session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php'
 ?>
 
-
+<?php
+require BASE_PATH . './Database/connect-database.php';
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,10 +25,8 @@ require_once '../Layout/header.php'
 
 <body>
     <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header"></section>
         <!-- Main content -->
-        <section class="content">
+        <section class="content my-2">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-12">
@@ -33,10 +34,10 @@ require_once '../Layout/header.php'
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <strong class="text-blue">DANH SÁCH CÔNG VIỆC</strong>
+                                        <strong class="text-blue">DANH SÁCH HỌC PHẦN<N></N></strong>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <a href="../lecturer/trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
+                                        <a href="../course/trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
                                     </div>
                                 </div>
                             </div>
@@ -44,28 +45,29 @@ require_once '../Layout/header.php'
                             <div class="card-body">
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
+                                        <?php
+                                        if (isset($_SESSION['success_message'])) {
+                                            echo '<div id="success-message" class="alert alert-success">' . $_SESSION['success_message'] . '</div>';
+                                            unset($_SESSION['success_message']); // Xóa thông báo sau khi hiển thị
+                                        }
+                                        ?>
                                         <tr>
-                                            <th>Rendering engine</th>
-                                            <th>Browser</th>
-                                            <th>Platform(s)</th>
-                                            <th>Engine version</th>
-                                            <th>CSS grade</th>
+                                            <th>Mã học phần</th>
+                                            <th>Tên học phần</th>
+                                            <th>Tên Khoa</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr>
+                                            <th>Mã học phần</th>
+                                            <th>Tên học phần</th>
+                                            <th>Tên Khoa</th>
+                                        </tr>
+                                        <tr>
                                            
                                         </tr>
                                     </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Rendering engine</th>
-                                            <th>Browser</th>
-                                            <th>Platform(s)</th>
-                                            <th>Engine version</th>
-                                            <th>CSS grade</th>
-                                        </tr>
-                                    </tfoot>
+                                   
                                 </table>
                             </div>
                             <!-- /.card-body -->

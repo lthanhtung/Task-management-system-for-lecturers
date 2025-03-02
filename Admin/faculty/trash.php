@@ -1,8 +1,37 @@
 <?php
+ob_start();
+session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php'
 ?>
 
+<?php
+require BASE_PATH . './Database/connect-database.php';
+$query = "SELECT * FROM khoa WHERE TrangThai IN (0)";
+$result = $dbc->query($query);
 
+// Xử lý Chuyển trạng Thái
+// Kiểm tra nếu có yêu cầu cập nhật trạng thái
+if (isset($_GET['id']) && isset($_GET['status'])) {
+    $id = $_GET['id'];
+    $status = $_GET['status'];
+
+    // Cập nhật trạng thái trong cơ sở dữ liệu
+    $stmt = $dbc->prepare("UPDATE khoa SET TrangThai = ? WHERE MaKhoa = ?");
+    $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
+
+    if ($stmt->execute()) {
+        // Cập nhật thành công
+        $_SESSION['message'] = "<K></K>hôi phục thành công";
+        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
+        ob_end_flush();
+        exit();
+    } else {
+        // Xử lý lỗi nếu cập nhật không thành công
+        echo "Lỗi khi cập nhật: " . $stmt->error;
+    }
+}
+
+?>
 
 <!DOCTYPE html>
 <html lang="en">
@@ -22,21 +51,26 @@ require_once '../Layout/header.php'
 
 <body>
     <div class="content-wrapper">
-        <!-- Content Header (Page header) -->
-        <section class="content-header"></section>
         <!-- Main content -->
-        <section class="content">
+        <section class="content my-2">
             <div class="container-fluid">
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
+
+                            <?php
+                            if (isset($_SESSION['message'])) {
+                                echo '<div id="success-message" class="alert alert-success">' . $_SESSION['message'] . '</div>';
+                                unset($_SESSION['message']); // Xóa thông báo sau khi hiển thị
+                            }
+                            ?>
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <strong class="text-blue">DANH SÁCH CÔNG VIỆC</strong>
+                                        <strong class="text-blue">THÙNG RÁC<N></N></strong>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <a href="../lecturer/trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
+                                        <a href="./trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
                                     </div>
                                 </div>
                             </div>
@@ -45,27 +79,28 @@ require_once '../Layout/header.php'
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Rendering engine</th>
-                                            <th>Browser</th>
-                                            <th>Platform(s)</th>
-                                            <th>Engine version</th>
-                                            <th>CSS grade</th>
+                                            <th style="width: 15%;">Mã khoa</th>
+                                            <th style="width: 65%;">Tên Khoa</th>
+                                            <th style="width: 20%;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                           
-                                        </tr>
+                                        <?php
+                                        if (mysqli_num_rows($result) > 0) {
+                                            while ($row = mysqli_fetch_array($result)) {
+                                                echo "<tr>";
+                                                echo "<td >{$row['MaKhoa']}</td>";
+                                                echo "<td>{$row['TenKhoa']}</td>";
+                                                echo "<td>";
+                                                echo "<a href='?id={$row['MaKhoa']}&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a>&nbsp;&nbsp;";
+                                                echo "<a href='?id={$row['MaKhoa']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
+                                                echo "</td>";
+                                                echo "</tr>";
+                                            }
+                                        }
+                                        ?>
                                     </tbody>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Rendering engine</th>
-                                            <th>Browser</th>
-                                            <th>Platform(s)</th>
-                                            <th>Engine version</th>
-                                            <th>CSS grade</th>
-                                        </tr>
-                                    </tfoot>
+
                                 </table>
                             </div>
                             <!-- /.card-body -->

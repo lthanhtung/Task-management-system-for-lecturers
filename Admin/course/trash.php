@@ -33,10 +33,7 @@ require_once '../Layout/header.php'
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <strong class="text-blue">DANH SÁCH CÔNG VIỆC</strong>
-                                    </div>
-                                    <div class="col-md-6 text-right">
-                                        <a href="../lecturer/trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
+                                        <strong class="text-blue">THÙNG RÁC<N></N></strong>
                                     </div>
                                 </div>
                             </div>
@@ -54,7 +51,7 @@ require_once '../Layout/header.php'
                                     </thead>
                                     <tbody>
                                         <tr>
-                                           
+
                                         </tr>
                                     </tbody>
                                     <tfoot>

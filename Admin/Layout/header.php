@@ -49,7 +49,7 @@ require_once '../../config.php';
                     <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="index3.html" class="nav-link">Home</a>
+                    <a href="index.php" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="#" class="nav-link">Contact</a>
@@ -215,12 +215,12 @@ require_once '../../config.php';
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <!-- Menu Công việc: Công việc -> Danh sách công việc, Tạo công việc, Danh mục loại công việc -->
+                        <!-- Menu Công việc: Công việc ->Danh sách công việc, Tạo công việc, Danh mục loại công việc -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
                                 <p>
-                                    Công việc
+                                    Công việc hành chính
                                     <i class="right fas fa-angle-left"></i>
                                 </p>
                             </a>
@@ -234,7 +234,7 @@ require_once '../../config.php';
                                 <li class="nav-item">
                                     <a href="../work/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Tạo công việc</p>
+                                        <p>Thêm công việc</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -252,6 +252,32 @@ require_once '../../config.php';
 
                             </ul>
                         </li>
+
+                        <!--Menu dành cho Khoa-->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fa-solid fa-building-columns"></i>
+                                <p>
+                                    Khoa
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="../faculty/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Danh sách khoa</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="../faculty/create.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Thêm khoa</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
 
                         <!-- Menu Giảng viên: Danh sách giảng viên, Thêm giảng viên-->
                         <li class="nav-item">
@@ -275,14 +301,62 @@ require_once '../../config.php';
                                         <p>Thêm giảng viên</p>
                                     </a>
                                 </li>
+                            </ul>
+                        </li>
+                        <!--Menu dành cho Học phần-->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fa fa-book "></i>
+                                <p>
+                                    Học phần
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="../course/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Danh sách học phần</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="../course/create.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Thêm học phần</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
+                        <!--Menu dành cho lịch giảng dạy-->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fa-solid fa-calendar"></i>
+                                <p>
+                                    Lịch giảng dạy
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="@Url.Action(" Index","Menu")" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Danh sách giảng dạy</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="@Url.Action(" Index","Slider")" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Thêm lịch giảng dạy</p>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
 
                         <!--Menu dành cho Tài khoản-->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
-                                <i class="fa fa-book "></i>
+                                <i class="fa-solid fa-user"></i>
                                 <p>
                                     Tài khoản
                                     <i class="right fas fa-angle-left"></i>
@@ -310,7 +384,7 @@ require_once '../../config.php';
             <!-- /.sidebar -->
         </aside>
     </div>
-    
+
 
     <!-- ./wrapper -->
 
