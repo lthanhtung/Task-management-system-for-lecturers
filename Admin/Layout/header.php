@@ -36,10 +36,17 @@ require_once '../../config.php';
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
 
+        <?php
+        // Kiểm tra xem trang hiện tại có phải là index.php không
+        $isIndexPage = basename($_SERVER['PHP_SELF']) === 'index.php';
+        ?>
+
         <!-- Preloader -->
-        <div class="preloader flex-column justify-content-center align-items-center">
-            <img class="animation__shake" src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTELogo" height="60" width="60">
-        </div>
+        <?php if ($isIndexPage): ?>
+            <div class="preloader flex-column justify-content-center align-items-center">
+                <img class="animation__shake" src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTELogo" height="60" width="60">
+            </div>
+        <?php endif; ?>
 
         <!-- Navbar -->
         <nav class="main-header navbar navbar-expand navbar-white navbar-light">
