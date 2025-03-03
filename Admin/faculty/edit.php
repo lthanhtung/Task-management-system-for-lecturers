@@ -3,25 +3,21 @@ ob_start();
 require_once '../Layout/header.php';
 require_once BASE_PATH . './Database/connect-database.php';
 
+// Lấy mã khoa cần edit từ GET
+$id = $_GET['MaKhoa'];
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = array(); // Initialize an error array.
-    $id = $_POST['MaKhoa'];
-    $sql = "Select * FROM khoa Where MaKhoa = '$id'";
 
-    $result = mysqli_query($dbc, $sql);
-    $rows = mysqli_fetch_array($result);
-
-    $MaKhoa = $id;
+    $MaKhoa = $_POST['MaKhoa'];
     $TenKhoa = $_POST['TenKhoa'];
 
-
-
     // Kiểm tra Mã Khoa
-    if (empty($_POST['MaKhoa'])) {
+    if (empty($MaKhoa)) {
         $errors['MaKhoa'] = 'Mã khoa không để trống!';
     } else {
-        $MaKhoa = mysqli_real_escape_string($dbc, trim($_POST['MaKhoa']));
-        $sql = "SELECT * FROM khoa WHERE MaKhoa = '$MaKhoa'";
+        $MaKhoa = mysqli_real_escape_string($dbc, trim($MaKhoa));
+        $sql = "SELECT * FROM khoa WHERE MaKhoa = '$MaKhoa' AND MaKhoa != '$id'";
         $result = mysqli_query($dbc, $sql);
 
         if (mysqli_num_rows($result) > 0) {
@@ -30,24 +26,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Kiểm tra Tên khoa
-    if (empty($_POST['TenKhoa'])) {
+    if (empty($TenKhoa)) {
         $errors['TenKhoa'] = 'Tên khoa không để trống';
     } else {
-        $TenKhoa = mysqli_real_escape_string($dbc, trim($_POST['TenKhoa']));
+        $TenKhoa = mysqli_real_escape_string($dbc, trim($TenKhoa));
         $sql = "SELECT * FROM khoa WHERE TenKhoa = '$TenKhoa'";
         $result = mysqli_query($dbc, $sql);
         if (mysqli_num_rows($result) > 0) {
-            $errors['TenKhoa'] = 'Tên khoa bị trùng';
-        }
-    }
-    if (isset($_POST['TrangThai'])) {
-        if ($_POST['TrangThai'] === 'xuat') {
-            $trangthai = 1;
-        } else {
-            $trangthai = 0; // Gán 0 nếu giá trị là khác
+            $TenKhoa = mysqli_real_escape_string($dbc, trim($TenKhoa));;
         }
     }
 
+    if (isset($_POST['TrangThai'])) {
+        $trangthai = ($_POST['TrangThai'] === 'xuat') ? 1 : 0;
+    }
 
     if (empty($errors)) {
         // Make the query:
@@ -55,16 +47,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         MaKhoa ='$MaKhoa',
         TenKhoa ='$TenKhoa',
         TrangThai ='$trangthai'		
-        Where MaKhoa  ='$id'";
-        echo ;
-
+        WHERE MaKhoa ='$id'"; // Sử dụng biến $id để cập nhật
 
         $r = @mysqli_query($dbc, $q); // Run the query.
         session_start(); // Bắt đầu phiên
         if ($r) { // If it ran OK.
-            // Print a message:
-            $_SESSION['success_message'] = 'Cập nhập khoa thành công!';
-            // Chuyển hướng đến index
+            $_SESSION['success_message'] = 'Cập nhật khoa thành công!';
             header("Location: index.php");
             ob_end_flush();
             exit();
@@ -79,15 +67,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     mysqli_close($dbc);
 } else {
-    //Lấy mamay cần edit
-    $id = $_GET['MaKhoa'];
-
-    $sql = "Select * FROM khoa Where MaKhoa = '$id'";
-
+    // Lấy thông tin khoa từ cơ sở dữ liệu để hiển thị
+    $sql = "SELECT * FROM khoa WHERE MaKhoa = '$id'";
     $result = mysqli_query($dbc, $sql);
     $rows = mysqli_fetch_array($result);
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -132,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <div class="col">
                                         <input class="form-control" type="text" name="MaKhoa"
                                             value="<?php if (isset($_POST['MaKhoa'])) echo $MaKhoa;
-                                                    else echo $rows['MaKhoa'] ; ?>">
+                                                    else echo $rows['MaKhoa']; ?>">
 
                                         <!-- Validation -->
                                         <?php if (isset($errors['MaKhoa'])): ?>

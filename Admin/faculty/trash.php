@@ -21,8 +21,8 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
 
     if ($stmt->execute()) {
         // Cập nhật thành công
-        $_SESSION['message'] = "<K></K>hôi phục thành công";
-        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
+        $_SESSION['message'] = "Khôi phục thành công";
+        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tạ<i></i>
         ob_end_flush();
         exit();
     } else {
@@ -47,6 +47,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+
 </head>
 
 <body>
@@ -69,9 +70,6 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                     <div class="col-md-6">
                                         <strong class="text-blue">THÙNG RÁC<N></N></strong>
                                     </div>
-                                    <div class="col-md-6 text-right">
-                                        <a href="./trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
-                                    </div>
                                 </div>
                             </div>
                             <!-- /.card-header -->
@@ -93,7 +91,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                                 echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>";
                                                 echo "<a href='?id={$row['MaKhoa']}&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a>&nbsp;&nbsp;";
-                                                echo "<a href='?id={$row['MaKhoa']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
+                                                echo "<a href='delete.php?MaKhoa={$row[0]}' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>&nbsp;&nbsp;";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
