@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     if (isset($_POST['TrangThai'])) {
-        $trangthai = ($_POST['TrangThai'] === 'xuat') ? 1 : 0;
+        $trangthai = ($_POST['TrangThai'] === 'xuat') ? 1 : 2;
     }
 
     if (empty($errors)) {
@@ -150,7 +150,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                         <div class="form-group">
                             <div class="col-md-offset-2 col-md-10">
-                                <button class="btn-sm btn-success" type="submit" name="create"> Lưu [Thêm] <i class="fa fa-save"></i> </button>
+                                <button class="btn-sm btn-success" type="submit" name="create"> Cập nhập <i class="fa fa-save"></i> </button>
                             </div>
                         </div>
                     </div><!-- /.card-body -->
