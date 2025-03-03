@@ -121,15 +121,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Trạng Thái <span class="text-danger">(*)</span></label>
-                                    <div class="col">
-                                        <select class="form-control" name="TrangThai">
-                                            <option value="xuat" selected>Xuất bản</option>
-                                            <option value="an">Ẩn</option>
-                                        </select>
+
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label>Trạng Thái <span class="text-danger">(*)</span></label>
+                                        <div class="col-md-7">
+                                            <select class="form-control" name="TrangThai">
+                                                <option value="xuat" selected>Chọn trạng thái</option>
+                                                <option value="xuat">Xuất bản</option>
+                                                <option value="an">Ẩn</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                         <div class="form-group">
