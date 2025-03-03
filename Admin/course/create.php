@@ -27,13 +27,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $sql = "SELECT * FROM hocphan WHERE TenHocPhan = '$TenHocPhan'";
         $result = mysqli_query($dbc, $sql);
         if (mysqli_num_rows($result) > 0) {
-            $errors['TenHocPhan'] = 'Tên học phần bị trùng';
+            $errors['TenHocPhan'] = 'Học phần bị trùng';
+        }
+    }
+
+    //Khoa
+    if (isset($_POST['Khoa'])) {
+        $Khoa = mysqli_real_escape_string($dbc,trim($_POST['Khoa']));
+    }
+
+
+    if (isset($_POST['TrangThai'])) {
+        if ($_POST['TrangThai'] === 'xuat') {
+            $trangthai = 1;
+        } else {
+            $trangthai = 2;
         }
     }
 
     if (empty($errors)) {
         // Make the query:
-        $q = "INSERT INTO hocphan (MaHocPhan, TenHocPhan) VALUES ('$MaHocPhan', '$TenHocPhan')";
+        $q = "INSERT INTO hocphan (MaHocPhan, TenHocPhan,MaKhoa,TrangThai) VALUES ('$MaHocPhan', '$TenHocPhan','$Khoa','$trangthai')";
         $r = @mysqli_query($dbc, $q); // Run the query.
         session_start(); // Bắt đầu phiên
         if ($r) { // If it ran OK.
@@ -52,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         exit();
     }
 
-    mysqli_close($dbc);
 }
 ?>
 
@@ -92,10 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <form action="" method="post">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-12">
+                            <div class="col-md-9">
                                 <div class="form-group">
                                     <label>Mã Học Phần <span class="text-danger"> (*)</span></label>
-                                    <div class="col">
+                                    <div class="col-md-10">
                                         <input class="form-control" type="text" name="MaHocPhan" value="">
                                         <?php if (isset($errors['MaHocPhan'])): ?>
                                             <small class="text-danger"><?php echo $errors['MaHocPhan']; ?></small>
@@ -105,7 +118,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                                 <div class="form-group">
                                     <label>Tên Học Phần <span class="text-danger"> (*)</span></label>
-                                    <div class="col">
+                                    <div class="col-md-10">
                                         <input class="form-control" type="text" name="TenHocPhan" value="">
                                         <?php if (isset($errors['TenHocPhan'])): ?>
                                             <small class="text-danger"><?php echo $errors['TenHocPhan']; ?></small>
@@ -113,10 +126,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <div class="col-md-offset-2 col-md-10">
-                                <button class="btn-sm btn-success" type="submit" name="create"> Lưu [Thêm] <i class="fa fa-save"></i> </button>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Khoa <span class="text-danger">(*)</span></label>
+                                    <div class="col-md-7">
+                                        <select class="form-control" name="Khoa" style="width: auto;">
+                                            <?php
+                                            require_once BASE_PATH . './Database/connect-database.php';
+                                            $sql = "Select * FROM khoa where TrangThai=1";
+                                            $result = mysqli_query($dbc, $sql);
+                                            if (mysqli_num_rows($result) <> 0) {
+                                                while ($row = mysqli_fetch_array($result)) {
+                                                    echo "	<option value='$row[MaKhoa]'>$row[TenKhoa]</option>";
+                                                }
+                                            }
+                                            ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Trạng Thái <span class="text-danger">(*)</span></label>
+                                    <div class="col-md-5">
+                                        <select class="form-control" name="TrangThai">
+                                            <option value="xuat" selected>Xuất bản</option>
+                                            <option value="an">Ẩn</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-md-offset-2 col-md-12   ">
+                                    <button class="btn-sm btn-success" type="submit" name="create"> Lưu [Thêm] <i class="fa fa-save"></i> </button>
+                                </div>
                             </div>
                         </div>
                     </div><!-- /.card-body -->

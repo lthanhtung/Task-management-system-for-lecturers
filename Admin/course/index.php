@@ -1,10 +1,44 @@
 <?php
+ob_start();
 session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php'
 ?>
 
 <?php
 require BASE_PATH . './Database/connect-database.php';
+$query = "
+SELECT hocphan.MaHocPhan, hocphan.TenHocPhan, khoa.TenKhoa, hocphan.TrangThai 
+FROM hocphan
+JOIN khoa ON hocphan.MaKhoa = khoa.MaKhoa 
+WHERE hocphan.TrangThai IN (1, 2)";
+$result = $dbc->query($query);
+
+// Xử lý Chuyển trạng Thái
+// Kiểm tra nếu có yêu cầu cập nhật trạng thái
+if (isset($_GET['id']) && isset($_GET['status'])) {
+    $id = $_GET['id'];
+    $status = $_GET['status'];
+
+    // Cập nhật trạng thái trong cơ sở dữ liệu
+    $stmt = $dbc->prepare("UPDATE hocphan SET TrangThai = ? WHERE  MaHocPhan= ?");
+    $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
+
+    if ($stmt->execute()) {
+        // Cập nhật thành công
+        if ($status == 0) {
+            $_SESSION['message'] = "Đã chuyển vào thùng rác!";
+        } else {
+            $_SESSION['message'] = "Cập nhật trạng thái thành công!";
+        }
+        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
+        ob_end_flush();
+        exit();
+    } else {
+        // Xử lý lỗi nếu cập nhật không thành công
+        echo "Lỗi khi cập nhật: " . $stmt->error;
+    }
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -31,13 +65,19 @@ require BASE_PATH . './Database/connect-database.php';
                 <div class="row">
                     <div class="col-12">
                         <div class="card">
+                            <?php
+                            if (isset($_SESSION['message'])) {
+                                echo '<div id="success-message" class="alert alert-success">' . $_SESSION['message'] . '</div>';
+                                unset($_SESSION['message']); // Xóa thông báo sau khi hiển thị
+                            }
+                            ?>
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
                                         <strong class="text-blue">DANH SÁCH HỌC PHẦN<N></N></strong>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <a href="../course/trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
+                                        <a href="./trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
                                     </div>
                                 </div>
                             </div>
@@ -45,29 +85,40 @@ require BASE_PATH . './Database/connect-database.php';
                             <div class="card-body">
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
-                                        <?php
-                                        if (isset($_SESSION['success_message'])) {
-                                            echo '<div id="success-message" class="alert alert-success">' . $_SESSION['success_message'] . '</div>';
-                                            unset($_SESSION['success_message']); // Xóa thông báo sau khi hiển thị
-                                        }
-                                        ?>
                                         <tr>
-                                            <th>Mã học phần</th>
-                                            <th>Tên học phần</th>
-                                            <th>Tên Khoa</th>
+                                            <th style="width: 10%;">Mã học phần</th>
+                                            <th style="width: 40%;">Tên học phần</th>
+                                            <th style="width: 20%;">Tên khoa</th>
+                                            <th style="width: 16%;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <th>Mã học phần</th>
-                                            <th>Tên học phần</th>
-                                            <th>Tên Khoa</th>
-                                        </tr>
-                                        <tr>
-                                           
-                                        </tr>
+                                        <?php
+                                        if (mysqli_num_rows($result) > 0) {
+                                            while ($row = mysqli_fetch_array($result)) {
+                                                echo "<tr>";
+                                                echo "<td >{$row['MaHocPhan']}</td>";
+                                                echo "<td>{$row['TenHocPhan']}</td>";
+                                                echo "<td>{$row['TenKhoa']}</td>";
+                                                echo "<td>";
+                                                // Chuyển trạng thái
+                                                if ($row['TrangThai'] == 1) {
+                                                    // Nếu trạng thái là 1, hiển thị nút "Bật"
+                                                    echo "<a href='?id={$row['MaHocPhan']}&status=2' class='btn-sm btn-success'><i class='fa fa-toggle-on'></i></a>&nbsp;&nbsp;";
+                                                } else {
+                                                    // Nếu trạng thái không phải là 1, hiển thị nút "Tắt"
+                                                    echo "<a href='?id={$row['MaHocPhan']}&status=1' class='btn-sm btn-danger'><i class='fa fa-toggle-off'></i></a>&nbsp;&nbsp;";
+                                                }
+
+                                                echo "<a href='edit.php?MaHocPhan={$row[0]}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Cập nhập </a>&nbsp;&nbsp;";
+                                                echo "<a href='?id={$row['MaHocPhan']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
+                                                echo "</td>";
+                                                echo "</tr>";
+                                            }
+                                        }
+                                        ?>
                                     </tbody>
-                                   
+
                                 </table>
                             </div>
                             <!-- /.card-body -->
