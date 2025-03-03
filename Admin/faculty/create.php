@@ -31,7 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
     if (isset($_POST['TrangThai'])) {
-        if ($_POST['TrangThai'] === 'xuat') {
+        if ($_POST['TrangThai'] === '') {
+            $errors['TrangThai'] = 'Chưa chọn trạng thái';
+        } elseif ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
         } else {
             $trangthai = 0; // Gán 0 nếu giá trị là khác
@@ -127,10 +129,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <label>Trạng Thái <span class="text-danger">(*)</span></label>
                                         <div class="col-md-7">
                                             <select class="form-control" name="TrangThai">
-                                                <option value="xuat" selected>Chọn trạng thái</option>
+                                                <option value="" selected>Chọn trạng thái</option>
                                                 <option value="xuat">Xuất bản</option>
                                                 <option value="an">Ẩn</option>
                                             </select>
+                                            <?php if (isset($errors['TrangThai'])): ?>
+                                                <small class="text-danger"><?php echo $errors['TrangThai']; ?></small>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                 </div>
