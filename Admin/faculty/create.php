@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } elseif ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
         } else {
-            $trangthai = 0; // Gán 0 nếu giá trị là khác
+            $trangthai = 2;
         }
     }
 
