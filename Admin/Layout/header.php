@@ -348,9 +348,17 @@ require_once '../../config.php';
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh sách giảng dạy</p>
+                                        <p>Danh sách lịch giảng dạy</p>
                                     </a>
                                 </li>
+
+                                <li class="nav-item">
+                                    <a href="../teaching-schedule/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Thông tin lịch giảng dạy</p>
+                                    </a>
+                                </li>
+
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
