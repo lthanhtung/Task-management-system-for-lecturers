@@ -346,13 +346,13 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Menu")" class="nav-link">
+                                    <a href="../teaching-schedule/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách giảng dạy</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Slider")" class="nav-link">
+                                    <a href="../teaching-schedule/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm lịch giảng dạy</p>
                                     </a>
