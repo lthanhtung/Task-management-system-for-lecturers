@@ -9,10 +9,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Kiểm tra Mã học Phần
     if (empty($_POST['MaLichGiang'])) {
-        $errors['MaLichGiang'] = 'Mã học phần không để trống!';
+        $errors['MaLichGiang'] = 'Mã lịch giảng không để trống!';
     } else {
         $MaLichGiang = mysqli_real_escape_string($dbc, trim($_POST['MaLichGiang']));
-        $sql = "SELECT * FROM lichgiangday WHERE MaLichGiang = '$MaLichGiang'";
+        $sql = "SELECT * FROM lichhocphan WHERE MaLichGiang = '$MaLichGiang'";
         $result = mysqli_query($dbc, $sql);
 
         if (mysqli_num_rows($result) > 0) {
@@ -24,13 +24,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $Mahocphan = mysqli_real_escape_string($dbc, trim($_POST['TenHocPhan']));
     }
 
-    // Kiểm tra DiaDiem
-    if (empty($_POST['DiaDiem'])) {
-        $errors['DiaDiem'] = 'Địa điểm không được để trống!';
-    } else {
-        $DiaDiem = mysqli_real_escape_string($dbc, trim($_POST['DiaDiem'])); 
-    }
-
     if (isset($_POST['DateStart'])) {
         $DateStart = mysqli_real_escape_string($dbc, trim($_POST['DateStart']));
     }
@@ -39,20 +32,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $DateEnd = mysqli_real_escape_string($dbc, trim($_POST['DateEnd']));
     }
 
-    if (empty($_POST['LichDay'])) {
-        $errors['LichDay'] = 'Lịch dạy không được để trống!';
+     if (empty($_POST['LichDay'])) {
+        $errors['LichDay'] = 'Vui lòng chọn lịch dạy';
     } else {
-        $lichDay = mysqli_real_escape_string($dbc, trim($_POST['LichDay'])); // Làm sạch dữ liệu
-        // Nếu cần kiểm tra trùng trong CSDL
-        $sql = "SELECT * FROM lichgiangday WHERE LichDay = '$lichDay'";
-        $result = mysqli_query($dbc, $sql);
-
-        if (mysqli_num_rows($result) > 0) {
-            $errors['LichDay'] = 'Lịch dạy này đã tồn tại!';
+        if ($_POST['LichDay'] === '2') {
+            $LichDay = 'Thứ Hai';
+        } elseif ($_POST['LichDay'] === '3') {
+            $LichDay = 'Thứ Ba';
+        } elseif ($_POST['LichDay'] === '4') {
+            $LichDay = 'Thứ Tư';
+        } elseif ($_POST['LichDay'] === '5') {
+            $LichDay = 'Thứ Năm';
+        } elseif ($_POST['LichDay'] === '6') {
+            $LichDay = 'Thứ Sáu';
+        } elseif ($_POST['LichDay'] === '7') {
+            $LichDay = 'Thứ Bảy';
+        } elseif ($_POST['LichDay'] === '1') {
+            $LichDay = 'Chủ Nhật';
         }
     }
-
-
+    
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
@@ -63,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (empty($errors)) {
         // Make the query:
-        $q = "INSERT INTO lichgiangday (MaLichGiang, MaHocPhan,LichDay,ThoiGianBatDau,ThoiGianKetThuc,DiaDiem,TrangThai) VALUES ('$MaLichGiang', '$Mahocphan','$lichDay','$DateStart','$DateEnd','$DiaDiem','$trangthai')";
+        $q = "INSERT INTO lichhocphan (MaLichGiang, MaHocPhan,LichDay,ThoiGianBatDau,ThoiGianKetThuc,TrangThai) VALUES ('$MaLichGiang', '$Mahocphan','$LichDay','$DateStart','$DateEnd','$trangthai')";
         $r = @mysqli_query($dbc, $q); // Run the query.
         session_start(); // Bắt đầu phiên
         if ($r) { // If it ran OK.
@@ -130,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+
                                 <div class="form-group">
                                     <label>Tên học phần <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
@@ -146,28 +146,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </select>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Địa điểm<span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-10">
-                                        <input class="form-control" type="text" name="DiaDiem" value="">
-                                        <?php if (isset($errors['DiaDiem'])): ?>
-                                            <small class="text-danger"><?php echo $errors['DiaDiem']; ?></small>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
 
                                 <div class="form-group">
                                     <label>Lịch Dạy<span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-10">
-                                        <textarea class="form-control" name="LichDay"></textarea>
+                                    <div class="col-md-2">
+                                        <select class="form-control" name="LichDay">
+                                            <option value="">Chọn ngày</option>
+                                            <option value="2">Thứ Hai</option>
+                                            <option value="3">Thứ Ba</option>
+                                            <option value="4">Thứ Tư</option>
+                                            <option value="5">Thứ Năm</option>
+                                            <option value="6">Thứ Sáu</option>
+                                            <option value="7">Thứ Bảy</option>
+                                            <option value="1">Chủ Nhật</option>
+                                        </select>
                                         <?php if (isset($errors['LichDay'])): ?>
                                             <small class="text-danger"><?php echo $errors['LichDay']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
-
-
                             </div>
 
 
@@ -195,7 +192,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </select>
                                     </div>
                                 </div>
-
 
 
                             </div>

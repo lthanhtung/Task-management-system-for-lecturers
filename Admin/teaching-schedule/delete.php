@@ -5,11 +5,11 @@ require_once '../Layout/header.php';
 require BASE_PATH . './Database/connect-database.php';
 
 // Truy vấn chỉ lấy các bản ghi có trạng thái == 0
-$query = "SELECT lichgiangday.*, hocphan.TenHocPhan 
-          FROM lichgiangday 
+$query = "SELECT lichhocphan.*, hocphan.TenHocPhan 
+          FROM lichhocphan 
           JOIN hocphan 
-          ON lichgiangday.MaHocPhan = hocphan.MaHocPhan 
-          WHERE lichgiangday.TrangThai = 0";
+          ON lichhocphan.MaHocPhan = hocphan.MaHocPhan 
+          WHERE lichhocphan.TrangThai = 0";
 $result = $dbc->query($query);
 
 // Xử lý yêu cầu xó<a href=""></a>
@@ -17,7 +17,7 @@ if (isset($_GET['id'])) {
     $id = $_GET['id'];
 
     // Xóa bản ghi trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("DELETE FROM lichgiangday WHERE MaLichGiang = ?");
+    $stmt = $dbc->prepare("DELETE FROM lichhocphan WHERE MaLichGiang = ?");
     $stmt->bind_param("s", $id); // 's' cho string
 
     if ($stmt->execute()) {
@@ -75,7 +75,6 @@ if (isset($_GET['id'])) {
                                             <th style="width: 8%;">Lịch dạy </th>
                                             <th style="width: 10%;">Thời gian bắt đầu</th>
                                             <th style="width: 10%;">Thời gian két thúc</th>
-                                            <th style="width: 5%;">Phòng học</th>
                                             <th style="width: 7%;"></th>
                                         </tr>
                                     </thead>
@@ -93,7 +92,6 @@ if (isset($_GET['id'])) {
 
                                                 echo "<td>{$row['ThoiGianBatDau']}</td>";
                                                 echo "<td>{$row['ThoiGianKetThuc']}</td>";
-                                                echo "<td>{$row['DiaDiem']}</td>";
                                                 echo "<td>";
                                                 echo "<a href='?id={$row['MaLichGiang']}' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
                                                 echo "</td>";

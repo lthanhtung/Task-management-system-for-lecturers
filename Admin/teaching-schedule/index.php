@@ -6,11 +6,11 @@ require_once '../Layout/header.php'
 
 <?php
 require BASE_PATH . './Database/connect-database.php';
-$query = "SELECT lichgiangday.*, hocphan.TenHocPhan 
-          FROM lichgiangday 
+$query = "SELECT lichhocphan.*, hocphan.TenHocPhan 
+          FROM lichhocphan 
           JOIN hocphan 
-          ON lichgiangday.MaHocPhan = hocphan.MaHocPhan 
-          WHERE lichgiangday.TrangThai IN (1, 2)";
+          ON lichhocphan.MaHocPhan = hocphan.MaHocPhan 
+          WHERE lichhocphan.TrangThai IN (1, 2)";
 $result = $dbc->query($query);
 
 // Xử lý Chuyển trạng Thái
@@ -20,7 +20,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     $status = $_GET['status'];
 
     // Cập nhật trạng thái trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("UPDATE lichgiangday SET TrangThai = ? WHERE MaLichGiang = ?");
+    $stmt = $dbc->prepare("UPDATE lichhocphan SET TrangThai = ? WHERE MaLichGiang = ?");
     $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
 
     if ($stmt->execute()) {
@@ -90,7 +90,6 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                             <th style="width: 10%;">Lịch dạy </th>
                                             <th style="width: 12%;">Thời gian bắt đầu</th>
                                             <th style="width: 12%;">Thời gian két thúc</th>
-                                            <th style="width: 8%;">Phòng học</th>
                                             <th style="width: 14%;"></th>
                                         </tr>
                                     </thead>
@@ -108,7 +107,6 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
 
                                                 echo "<td>{$row['ThoiGianBatDau']}</td>";
                                                 echo "<td>{$row['ThoiGianKetThuc']}</td>";
-                                                echo "<td>{$row['DiaDiem']}</td>";
                                                 echo "<td>";
                                                 // Chuyển trạng thái
                                                 if ($row['TrangThai'] == 1) {
