@@ -93,16 +93,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    //Kiểm tra thời gian
-    if (empty($_POST['thoigian'])) {
-        $errors['thoigian'] = 'Tên giảng viên không để trống';
+    //Kiểm tra thứ tiếp sinh viên
+    if (empty($_POST['thutiep'])) {
+        $errors['thutiep'] = 'Vui lòng chọn ngày tiếp sinh viên';
     } else {
-        $thoigian = mysqli_real_escape_string($dbc, trim($_POST['thoigian']));
+        if ($_POST['thutiep'] === '2') {
+            $thutiep = 'Thứ Hai';
+        } elseif ($_POST['thutiep'] === '3') {
+            $thutiep = 'Thứ Ba';
+        } elseif ($_POST['thutiep'] === '4') {
+            $thutiep = 'Thứ Tư';
+        } elseif ($_POST['thutiep'] === '5') {
+            $thutiep = 'Thứ Năm';
+        } elseif ($_POST['thutiep'] === '6') {
+            $thutiep = 'Thứ Sáu';
+        } elseif ($_POST['thutiep'] === '7') {
+            $thutiep = 'Thứ Bảy';
+        } elseif ($_POST['thutiep'] === '1') {
+            $thutiep = 'Chủ Nhật';
+        }
+    }
+    //Kiểm tra thời gian bắt đầu
+    if (empty($_POST['thoigian_batdau'])) {
+        $errors['thoigian_batdau'] = 'Thời gian bắt đầu không để trống';
+    } else {
+        $thoigian_batdau = mysqli_real_escape_string($dbc, trim($_POST['thoigian_batdau']));
     }
 
-    //Kiểm tra Địa điểm
+    //Kiểm tra thời gian kết thúc
+    if (empty($_POST['thoigian_ketthuc'])) {
+        $errors['thoigian_ketthuc'] = 'Thời gian kết thúc không để trống';
+    } else {
+        $thoigian_ketthuc = mysqli_real_escape_string($dbc, trim($_POST['thoigian_ketthuc']));
+    }
+
+    //Kiểm tra Địa điểm tiếp sinh viên
     if (empty($_POST['diadiem'])) {
-        $errors['diadiem'] = 'Tên giảng viên không để trống';
+        $errors['diadiem'] = 'Địa điểm không để trống';
     } else {
         $diadiem = mysqli_real_escape_string($dbc, trim($_POST['diadiem']));
     }
@@ -151,11 +178,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Make the query:
         $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien,TenGiangVien,NgaySinh,GioiTinh,Email,SoDienThoai,HocVi,ChucDanh,MaKhoa,TrangThai) 
         VALUES ('$MaGiangVien', '$HoGiangVien','$TenGiangVien','$NgaySinh','$GioiTinh','$Email','$SDT','$hocvi','$chucdanh','$Khoa','$trangthai')";
-        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien, ThoiGian,DiaDiem) VALUES ('$MaGiangVien', '$thoigian','$diadiem')";
+        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien,ThuTiepSinhVien,ThoiGianBatDau,ThoiGianKetThuc,DiaDiem) VALUES ('$MaGiangVien','$thutiep','$thoigian_batdau','$thoigian_ketthuc','$diadiem')";
+        $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan,MatKhau,Quyen) VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v','User')";
         $r1 = @mysqli_query($dbc, $queryGiangVien); // Run the query.
         $r2 = @mysqli_query($dbc, $queryLichTiep); // Run the query.
+        $r3 = @mysqli_query($dbc, $queryTaiKhoanGiangVien);
         session_start(); // Bắt đầu phiên
-        if ($r1 && $r2) { // If it ran OK.
+        if ($r1 && $r2 && $r3) { // If it ran OK.
             // Print a message:
             $_SESSION['success_message'] = 'Đã thêm giảng viên thành công!';
             // Chuyển hướng đến index
@@ -217,7 +246,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <input class="form-control" type="text" name="MaGiangVien" value="">
                                         <?php if (isset($errors['MaGiangVien'])): ?>
                                             <small class=" text-danger"><?php echo $errors['MaGiangVien']; ?></small>
-                                    <?php endif; ?>
+                                        <?php endif; ?>
                                     </div>
                                 </div>
 
@@ -239,6 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+
                                 <div class="form-group">
                                     <label>Email <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
@@ -248,13 +278,44 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+
                                 <div class="form-group">
-                                    <label>Thời gian gặp sinh viên <span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-10">
-                                        <input class="form-control" type="text" name="thoigian" value="">
-                                        <?php if (isset($errors['thoigian'])): ?>
-                                            <small class="text-danger"><?php echo $errors['thoigian']; ?></small>
-                                        <?php endif; ?>
+                                    <label>Lịch tiếp sinh viên <span class="text-danger"> (*)</span></label>
+                                    <div class="row">
+                                        <div class="col-md-2">
+                                            <select class="form-control" name="thutiep">
+                                                <option value="">Chọn ngày</option>
+                                                <option value="2">Thứ Hai</option>
+                                                <option value="3">Thứ Ba</option>
+                                                <option value="4">Thứ Tư</option>
+                                                <option value="5">Thứ Năm</option>
+                                                <option value="6">Thứ Sáu</option>
+                                                <option value="7">Thứ Bảy</option>
+                                                <option value="1">Chủ Nhật</option>
+                                            </select>
+                                            <?php if (isset($errors['thutiep'])): ?>
+                                                <small class="text-danger"><?php echo $errors['thutiep']; ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                        <!-- Thời gian bắt đầu -->
+                                        <div class="col-md-2">
+                                            <input class="form-control" type="time" name="thoigian_batdau" value="">
+                                            <?php if (isset($errors['thoigian_batdau'])): ?>
+                                                <small class="text-danger"><?php echo $errors['thoigian_batdau']; ?></small>
+                                            <?php endif; ?>
+                                        </div>
+                                        
+                                        <p style="margin-top: 10px;">
+                                            <i class="fa fa-arrow-right" aria-hidden="true"></i>
+                                        </p>
+
+                                        <!-- Thời gian kết thúc -->
+                                        <div class="col-md-2">
+                                            <input class="form-control" type="time" name="thoigian_ketthuc" value="">
+                                            <?php if (isset($errors['thoigian_ketthuc'])): ?>
+                                                <small class="text-danger"><?php echo $errors['thoigian_ketthuc']; ?></small>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -267,7 +328,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
 
                                 <div class="form-group">
                                     <label>Trạng Thái <span class="text-danger">(*)</span></label>

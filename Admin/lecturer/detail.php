@@ -6,7 +6,7 @@ require_once BASE_PATH . './Database/connect-database.php';
 $id = $_GET['MaGiangVien'];
 // Lấy thông tin khoa từ cơ sở dữ liệu để hiển thị
 $sql = "
-    SELECT giangvien.*, lichtiepsinhvien.ThoiGian, lichtiepsinhvien.DiaDiem 
+    SELECT giangvien.*, lichtiepsinhvien.*
     FROM giangvien 
     JOIN lichtiepsinhvien ON giangvien.MaGiangVien = lichtiepsinhvien.MaGiangVien 
     WHERE giangvien.MaGiangVien = '$id'";
@@ -83,7 +83,7 @@ $rows = mysqli_fetch_array($result);
                                     <label>Thời gian gặp sinh viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input readonly class="form-control" type="text" name="ThoiGian"
-                                            value="<?php echo $rows['ThoiGian']; ?>">
+                                            value="<?php echo $rows['ThuTiepSinhVien'].' vào lúc: '.$rows['ThoiGianBatDau'].' đến '.$rows['ThoiGianKetThuc'] ; ?>">
                                     </div>
                                 </div>
 

@@ -86,13 +86,12 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th style="width: 15%;">Họ giảng viên</th>
-                                            <th style="display: flex;justify-content: center;align-content: center; width: 15%;"">Tên giảng viên</th>
-                                            <th style="width: 8% ;display: flex;justify-content: center;align-content: center;">Học Vị</th>
-                                            <th style=" display: flex;justify-content: center;align-content: center; width: 10%;">Chức Danh</th>
-                                            <th style="display: flex;justify-content: center;align-content: center; width: 10%;">Khoa</th>
-                                            <th style="display: flex;justify-content: center;align-content: center; width: 10%;">Thông tin</th>
-                                            <th style="width: 20%;"></th>
+                                            <th>Ảnh</th>
+                                            <th>Họ tên giảng viên</th>
+                                            <th>Khoa</th>
+                                            <th>Học vị</th>
+                                            <th>Chức danh</th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
