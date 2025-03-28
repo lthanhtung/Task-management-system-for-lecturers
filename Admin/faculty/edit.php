@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $r = @mysqli_query($dbc, $q); // Run the query.
         session_start(); // Bắt đầu phiên
         if ($r) { // If it ran OK.
-            $_SESSION['success_message'] = 'Cập nhật khoa thành công!';
+            $_SESSION['message'] = 'Cập nhật khoa thành công!';
             header("Location: index.php");
             ob_end_flush();
             exit();
