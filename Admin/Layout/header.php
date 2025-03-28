@@ -192,7 +192,7 @@ require_once '../../config.php';
             <a href="index3.html" class="brand-link">
                 <img src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
                     style="opacity: .8">
-                <span class="brand-text font-weight-light">AdminLTE 3</span>
+                <span class="brand-text font-weight-light">Vai trò</span>
             </a>
 
             <!-- Sidebar -->
@@ -203,7 +203,7 @@ require_once '../../config.php';
                         <img src="<?php echo BASE_URL ?>/Public/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">ADMIN</a>
+                        <a href="#" class="d-block">TÊN GIẢNG VIÊN</a>
                     </div>
                 </div>
 
@@ -381,13 +381,13 @@ require_once '../../config.php';
                                 <li class="nav-item">
                                     <a href="@Url.Action(" Index","Menu")" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh sách tài khoản giảng viên</p>
+                                        <p>Danh sách tài khoản</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
                                     <a href="@Url.Action(" Index","Slider")" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Thêm tài khoản giảng viên</p>
+                                        <p>Thêm tài khoản</p>
                                     </a>
                                 </li>
                             </ul>
