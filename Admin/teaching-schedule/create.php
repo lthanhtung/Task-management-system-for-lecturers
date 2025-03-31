@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $DateEnd = mysqli_real_escape_string($dbc, trim($_POST['DateEnd']));
     }
 
-     if (empty($_POST['LichDay'])) {
+    if (empty($_POST['LichDay'])) {
         $errors['LichDay'] = 'Vui lòng chọn lịch dạy';
     } else {
         if ($_POST['LichDay'] === '2') {
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $LichDay = 'Chủ Nhật';
         }
     }
-    
+
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
@@ -148,22 +148,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Lịch Dạy<span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-2">
-                                        <select class="form-control" name="LichDay">
-                                            <option value="">Chọn ngày</option>
-                                            <option value="2">Thứ Hai</option>
-                                            <option value="3">Thứ Ba</option>
-                                            <option value="4">Thứ Tư</option>
-                                            <option value="5">Thứ Năm</option>
-                                            <option value="6">Thứ Sáu</option>
-                                            <option value="7">Thứ Bảy</option>
-                                            <option value="1">Chủ Nhật</option>
-                                        </select>
-                                        <?php if (isset($errors['LichDay'])): ?>
-                                            <small class="text-danger"><?php echo $errors['LichDay']; ?></small>
-                                        <?php endif; ?>
-                                    </div>
+                                    <label>Lịch dạy <span class="text-danger"> (*)</span></label>
+                                    <button type="button" id="addScheduleButton">Thêm lịch dạy</button>
+                                    <div id="scheduleContainer"></div>
                                 </div>
                             </div>
 
@@ -206,6 +193,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div><!-- /.card -->
         </section><!-- /.content -->
     </div><!-- /.content-wrapper -->
+
+    <!-- Chức năng thêm trường nhập để thêm lịch giảng dạy -->
+    <script>
+        document.getElementById('addScheduleButton').addEventListener('click', function() {
+            const scheduleContainer = document.getElementById('scheduleContainer');
+            const newSchedule = document.createElement('div');
+            newSchedule.classList.add('row');
+
+            newSchedule.innerHTML = `
+            <div class="col-md-2">
+                <select class="form-control" name="Lichgiang[]">
+                    <option value="">Chọn ngày</option>
+                    <option value="2">Thứ Hai</option>
+                    <option value="3">Thứ Ba</option>
+                    <option value="4">Thứ Tư</option>
+                    <option value="5">Thứ Năm</option>
+                    <option value="6">Thứ Sáu</option>
+                    <option value="7">Thứ Bảy</option>
+                    <option value="1">Chủ Nhật</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input class="form-control" type="time" name="thoigian_batdau[]">
+            </div>
+            <p style="margin-top: 10px;">
+                <i class="fa fa-arrow-right" aria-hidden="true"></i>
+            </p>
+            <div class="col-md-2">
+                <input class="form-control" type="time" name="thoigian_ketthuc[]">
+            </div>
+        `;
+
+            scheduleContainer.appendChild(newSchedule);
+        });
+    </script>
+
+
 
     <!-- jQuery -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
