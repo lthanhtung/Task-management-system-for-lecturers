@@ -340,7 +340,7 @@ require_once '../../config.php';
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-calendar"></i>
                                 <p>
-                                    Lịch giảng dạy
+                                    Lịch học phần
                                     <i class="right fas fa-angle-left"></i>
                                 </p>
                             </a>
@@ -348,7 +348,7 @@ require_once '../../config.php';
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh sách lịch giảng dạy</p>
+                                        <p>Danh sách lịch học phần</p>
                                     </a>
                                 </li>
 
@@ -362,7 +362,7 @@ require_once '../../config.php';
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Thêm lịch giảng dạy</p>
+                                        <p>Thêm lịch học phần</p>
                                     </a>
                                 </li>
                             </ul>
@@ -379,15 +379,15 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Menu")" class="nav-link">
+                                    <a href="../account/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách tài khoản</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Slider")" class="nav-link">
+                                    <a href="../account//User_Role.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
-                                        <p>Thêm tài khoản</p>
+                                        <p>Phân quyền</p>
                                     </a>
                                 </li>
                             </ul>
