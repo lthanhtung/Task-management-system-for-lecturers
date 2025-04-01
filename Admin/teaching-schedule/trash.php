@@ -20,7 +20,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     $status = $_GET['status'];
 
     // Cập nhật trạng thái trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("UPDATE lichhocphan SET TrangThai = ? WHERE  MaLichGiang= ?");
+    $stmt = $dbc->prepare("UPDATE lichhocphan SET TrangThai = ? WHERE  MaLichHocPhan = ?");
     $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
 
     if ($stmt->execute()) {
@@ -80,9 +80,10 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                     <thead>
                                         <tr>
                                             <th style="width: 15%;">Tên học phần</th>
-                                            <th style="width: 10%;">Lịch dạy </th>
+                                            <th style="width: 10%;">Lớp học phần </th>
                                             <th style="width: 12%;">Thời gian bắt đầu</th>
                                             <th style="width: 12%;">Thời gian két thúc</th>
+                                            <th style="width: 10%;">Địa điểm </th>
                                             <th style="width: 14%;"></th>
                                         </tr>
                                     </thead>
@@ -92,17 +93,14 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
                                                 echo "<td >{$row['TenHocPhan']}</td>";
-
-                                                $timeString = $row['LichDay'];
-                                                $days = preg_split('/(?=Thứ)/', $timeString, -1, PREG_SPLIT_NO_EMPTY);
-                                                $formattedTime = implode('<br>', $days); // Nối các ngày bằng <br>
-                                                echo "<td>$formattedTime</td>";
+                                                echo "<td >{$row['LopHocPhan']}</td>";
 
                                                 echo "<td>{$row['ThoiGianBatDau']}</td>";
                                                 echo "<td>{$row['ThoiGianKetThuc']}</td>";
+                                                echo "<td>{$row['DiaDiem']}</td>";
                                                 echo "<td>";
-                                                echo "<a href='?id={$row['MaLichGiang']}&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a>&nbsp;&nbsp;";
-                                                echo "<a href='delete.php?MaLichGiang={$row[0]}' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>&nbsp;&nbsp;";
+                                                echo "<a href='?id={$row['MaLichHocPhan']}&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a>&nbsp;&nbsp;";
+                                                echo "<a href='delete.php?MaLichHocPhan={$row[0]}' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>&nbsp;&nbsp;";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }

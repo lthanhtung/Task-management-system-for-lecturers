@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     } else {
         foreach ($lichgiang as $index => $ngayday) {
             if (empty($thoigian_batdau[$index]) || empty($thoigian_ketthuc[$index])) {
-                $errors['thoigian'] = 'Vui lòng nhập thời gian bắt đầu hoặc kết thúc cho mỗi lịch giảng dạy';
+                $errors['thoigian'] = 'Vui lòng nhập thời gian bắt đầu hoặc kết thúc cho ngày dạy';
                 break;
             }
         }

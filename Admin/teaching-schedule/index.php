@@ -20,7 +20,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     $status = $_GET['status'];
 
     // Cập nhật trạng thái trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("UPDATE lichhocphan SET TrangThai = ? WHERE MaLichGiang = ?");
+    $stmt = $dbc->prepare("UPDATE lichhocphan SET TrangThai = ? WHERE MaLichHocPhan = ?");
     $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
 
     if ($stmt->execute()) {
@@ -87,9 +87,10 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                     <thead>
                                         <tr>
                                             <th style="width: 15%;">Tên học phần</th>
-                                            <th style="width: 10%;">Lịch dạy </th>
+                                            <th style="width: 10%;">Lớp học phần </th>
                                             <th style="width: 12%;">Thời gian bắt đầu</th>
                                             <th style="width: 12%;">Thời gian két thúc</th>
+                                            <th style="width: 10%;">Địa điểm </th>
                                             <th style="width: 14%;"></th>
                                         </tr>
                                     </thead>
@@ -99,26 +100,23 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
                                                 echo "<td >{$row['TenHocPhan']}</td>";
-
-                                                $timeString = $row['LichDay'];
-                                                $days = preg_split('/(?=Thứ)/', $timeString, -1, PREG_SPLIT_NO_EMPTY);
-                                                $formattedTime = implode('<br>', $days); // Nối các ngày bằng <br>
-                                                echo "<td>$formattedTime</td>";
+                                                echo "<td >{$row['LopHocPhan']}</td>";
 
                                                 echo "<td>{$row['ThoiGianBatDau']}</td>";
                                                 echo "<td>{$row['ThoiGianKetThuc']}</td>";
+                                                echo "<td>{$row['DiaDiem']}</td>";
                                                 echo "<td>";
                                                 // Chuyển trạng thái
                                                 if ($row['TrangThai'] == 1) {
                                                     // Nếu trạng thái là 1, hiển thị nút "Bật"
-                                                    echo "<a href='?id={$row['MaLichGiang']}&status=2' class='btn-sm btn-success'><i class='fa fa-toggle-on'></i></a>&nbsp;&nbsp;";
+                                                    echo "<a href='?id={$row['MaLichHocPhan']}&status=2' class='btn-sm btn-success'><i class='fa fa-toggle-on'></i></a>&nbsp;&nbsp;";
                                                 } else {
                                                     // Nếu trạng thái không phải là 1, hiển thị nút "Tắt"
-                                                    echo "<a href='?id={$row['MaLichGiang']}&status=1' class='btn-sm btn-danger'><i class='fa fa-toggle-off'></i></a>&nbsp;&nbsp;";
+                                                    echo "<a href='?id={$row['MaLichHocPhan']}&status=1' class='btn-sm btn-danger'><i class='fa fa-toggle-off'></i></a>&nbsp;&nbsp;";
                                                 }
 
-                                                echo "<a href='edit.php?MaLichGiang={$row[0]}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Cập nhập </a>&nbsp;&nbsp;";
-                                                echo "<a href='?id={$row['MaLichGiang']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
+                                                echo "<a href='edit.php?MaLichHocPhan={$row[0]}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Cập nhập </a>&nbsp;&nbsp;";
+                                                echo "<a href='?id={$row['MaLichHocPhan']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
