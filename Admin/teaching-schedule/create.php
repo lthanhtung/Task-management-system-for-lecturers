@@ -52,6 +52,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // Kiểm tra Mã họ
+    if (empty($_POST['MaLichGiang'])) {
+        $errors['MaLichGiang'] = 'Mã lịch giảng không để trống!';
+    } else {
+        $MaLichGiang = mysqli_real_escape_string($dbc, trim($_POST['MaLichGiang']));
+        $sql = "SELECT * FROM lichhocphan WHERE MaLichGiang = '$MaLichGiang'";
+        $result = mysqli_query($dbc, $sql);
+
+        if (mysqli_num_rows($result) > 0) {
+            $errors['MaLichGiang'] = 'Mã học phần bị trùng';
+        }
+    }
+
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
@@ -152,6 +165,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <button type="button" id="addScheduleButton">Thêm lịch dạy</button>
                                     <div id="scheduleContainer"></div>
                                 </div>
+
+                                <div class="form-group">
+                                    <label>Địa điểm<span class="text-danger"> (*)</span></label>
+                                    <div class="col-md-10">
+                                        <input class="form-control" type="text" name="DiaDiem" value="">
+                                        <?php if (isset($errors['DiaDiem'])): ?>
+                                            <small class="text-danger"><?php echo $errors['DiaDiem']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+
                             </div>
 
 
