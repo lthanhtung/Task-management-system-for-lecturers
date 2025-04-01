@@ -31,39 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (isset($_POST['DateEnd'])) {
         $DateEnd = mysqli_real_escape_string($dbc, trim($_POST['DateEnd']));
     }
-
-    if (empty($_POST['LichDay'])) {
-        $errors['LichDay'] = 'Vui lòng chọn lịch dạy';
-    } else {
-        if ($_POST['LichDay'] === '2') {
-            $LichDay = 'Thứ Hai';
-        } elseif ($_POST['LichDay'] === '3') {
-            $LichDay = 'Thứ Ba';
-        } elseif ($_POST['LichDay'] === '4') {
-            $LichDay = 'Thứ Tư';
-        } elseif ($_POST['LichDay'] === '5') {
-            $LichDay = 'Thứ Năm';
-        } elseif ($_POST['LichDay'] === '6') {
-            $LichDay = 'Thứ Sáu';
-        } elseif ($_POST['LichDay'] === '7') {
-            $LichDay = 'Thứ Bảy';
-        } elseif ($_POST['LichDay'] === '1') {
-            $LichDay = 'Chủ Nhật';
-        }
-    }
-
-    // Kiểm tra Mã họ
-    if (empty($_POST['MaLichGiang'])) {
-        $errors['MaLichGiang'] = 'Mã lịch giảng không để trống!';
-    } else {
-        $MaLichGiang = mysqli_real_escape_string($dbc, trim($_POST['MaLichGiang']));
-        $sql = "SELECT * FROM lichhocphan WHERE MaLichGiang = '$MaLichGiang'";
-        $result = mysqli_query($dbc, $sql);
-
-        if (mysqli_num_rows($result) > 0) {
-            $errors['MaLichGiang'] = 'Mã học phần bị trùng';
-        }
-    }
+    
+    
 
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] === 'xuat') {
@@ -144,6 +113,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
 
                                 <div class="form-group">
+                                    <label>Lớp học phần<span class="text-danger"> (*)</span></label>
+                                    <div class="col-md-10">
+                                        <input class="form-control" type="text" name="lophocphan" value="">
+                                        <?php if (isset($errors['lophocphan'])): ?>
+                                            <small class="text-danger"><?php echo $errors['lophocphan']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
                                     <label>Tên học phần <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <select class="form-control" name="TenHocPhan" style="width: auto;">
@@ -167,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
 
                                 <div class="form-group">
-                                    <label>Địa điểm<span class="text-danger"> (*)</span></label>
+                                    <label>Địa điểm học<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input class="form-control" type="text" name="DiaDiem" value="">
                                         <?php if (isset($errors['DiaDiem'])): ?>
@@ -227,30 +206,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             newSchedule.classList.add('row');
 
             newSchedule.innerHTML = `
-            <div class="col-md-2">
-                <select class="form-control" name="Lichgiang[]">
-                    <option value="">Chọn ngày</option>
-                    <option value="2">Thứ Hai</option>
-                    <option value="3">Thứ Ba</option>
-                    <option value="4">Thứ Tư</option>
-                    <option value="5">Thứ Năm</option>
-                    <option value="6">Thứ Sáu</option>
-                    <option value="7">Thứ Bảy</option>
-                    <option value="1">Chủ Nhật</option>
-                </select>
-            </div>
-            <div class="col-md-2">
-                <input class="form-control" type="time" name="thoigian_batdau[]">
-            </div>
-            <p style="margin-top: 10px;">
-                <i class="fa fa-arrow-right" aria-hidden="true"></i>
-            </p>
-            <div class="col-md-2">
-                <input class="form-control" type="time" name="thoigian_ketthuc[]">
-            </div>
+        <div class="col-md-2">
+            <select class="form-control" name="Lichgiang[]">
+                <option value="">Chọn ngày</option>
+                <option value="2">Thứ Hai</option>
+                <option value="3">Thứ Ba</option>
+                <option value="4">Thứ Tư</option>
+                <option value="5">Thứ Năm</option>
+                <option value="6">Thứ Sáu</option>
+                <option value="7">Thứ Bảy</option>
+                <option value="1">Chủ Nhật</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input class="form-control" type="time" name="thoigian_batdau[]">
+        </div>
+        <p style="margin-top: 10px;">
+            <i class="fa fa-arrow-right" aria-hidden="true"></i>
+        </p>
+        <div class="col-md-2">
+            <input class="form-control" type="time" name="thoigian_ketthuc[]">
+        </div>
+        <div class="col-md-offset-2 col-md-2   ">
+            <button type="button" class="btn btn-danger remove-button";"><i class="fa-solid fa-trash"></i></button>
+        </div>
         `;
 
+            // Thêm mục lịch mới vào container
             scheduleContainer.appendChild(newSchedule);
+
+            // Thêm sự kiện cho nút xóa
+            newSchedule.querySelector('.remove-button').addEventListener('click', function() {
+                scheduleContainer.removeChild(newSchedule);
+            });
         });
     </script>
 
