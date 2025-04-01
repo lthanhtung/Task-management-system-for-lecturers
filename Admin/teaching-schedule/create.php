@@ -7,33 +7,65 @@ require_once BASE_PATH . './Database/connect-database.php';
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $errors = array(); // Initialize an error array.
 
-    // Kiểm tra Mã học Phần
-    if (empty($_POST['MaLichGiang'])) {
-        $errors['MaLichGiang'] = 'Mã lịch giảng không để trống!';
+    //Mã lịch học phần
+    if (empty($_POST['MaLichHocPhan'])) {
+        $errors['MaLichHocPhan'] = 'Mã lịch học phần không để trống!';
     } else {
-        $MaLichGiang = mysqli_real_escape_string($dbc, trim($_POST['MaLichGiang']));
-        $sql = "SELECT * FROM lichhocphan WHERE MaLichGiang = '$MaLichGiang'";
+        $MaLichHocPhan = mysqli_real_escape_string($dbc, trim($_POST['MaLichHocPhan']));
+        $sql = "SELECT * FROM lichhocphan WHERE MaLichHocPhan = '$MaLichHocPhan'";
         $result = mysqli_query($dbc, $sql);
 
         if (mysqli_num_rows($result) > 0) {
-            $errors['MaLichGiang'] = 'Mã học phần bị trùng';
+            $errors['MaLichHocPhan'] = 'Mã học phần bị trùng';
         }
     }
 
+    //Lớp học phần
+    if (empty($_POST['lophocphan'])) {
+        $errors['lophocphan'] = 'Chưa nhập lớp học phần';
+    } else {
+        $lophocphan = mysqli_real_escape_string($dbc, trim($_POST['lophocphan']));
+    }
+
+    //Tên học phần
     if (isset($_POST['TenHocPhan'])) {
         $Mahocphan = mysqli_real_escape_string($dbc, trim($_POST['TenHocPhan']));
     }
 
+    //Thời gian bắt đầu
     if (isset($_POST['DateStart'])) {
         $DateStart = mysqli_real_escape_string($dbc, trim($_POST['DateStart']));
     }
 
+    //Thời gian kết thúc
     if (isset($_POST['DateEnd'])) {
         $DateEnd = mysqli_real_escape_string($dbc, trim($_POST['DateEnd']));
     }
-    
-    
 
+    //Lịch giảng dạy
+    $lichgiang = isset($_POST['Lichgiang']) ? $_POST['Lichgiang'] : [];
+    $thoigian_batdau = isset($_POST['thoigian_batdau']) ? $_POST['thoigian_batdau'] : [];
+    $thoigian_ketthuc = isset($_POST['thoigian_ketthuc']) ? $_POST['thoigian_ketthuc'] : [];
+
+    if (empty($lichgiang) || count($lichgiang) === 0) {
+        $errors['lichgiang'] = 'Vui lòng thêm ít nhất một lịch giảng dạy';
+    } else {
+        foreach ($lichgiang as $index => $ngayday) {
+            if (empty($thoigian_batdau[$index]) || empty($thoigian_ketthuc[$index])) {
+                $errors['thoigian'] = 'Vui lòng nhập thời gian bắt đầu hoặc kết thúc cho mỗi lịch giảng dạy';
+                break;
+            }
+        }
+    }
+
+    // Địa điểm học
+    if (empty($_POST['DiaDiem'])) {
+        $errors['DiaDiem'] = 'Địa điểm học không để trống';
+    } else {
+        $DiaDiem = mysqli_real_escape_string($dbc, trim($_POST['DiaDiem']));
+    }
+
+    //Trạng thái
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] === 'xuat') {
             $trangthai = 1;
@@ -44,12 +76,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (empty($errors)) {
         // Make the query:
-        $q = "INSERT INTO lichhocphan (MaLichGiang, MaHocPhan,LichDay,ThoiGianBatDau,ThoiGianKetThuc,TrangThai) VALUES ('$MaLichGiang', '$Mahocphan','$LichDay','$DateStart','$DateEnd','$trangthai')";
-        $r = @mysqli_query($dbc, $q); // Run the query.
+        $qLichHocPhan = "INSERT INTO lichhocphan (MaLichHocPhan, MaHocPhan,LopHocPhan,ThoiGianBatDau,ThoiGianKetThuc,DiaDiem,TrangThai) VALUES ('$MaLichHocPhan', '$Mahocphan','$lophocphan','$DateStart','$DateEnd','$DiaDiem','$trangthai')";
+        $r = @mysqli_query($dbc, $qLichHocPhan); // Run the query.
+
+        // Lưu lịch giảng dạy vào bảng lichgiang
+        foreach ($lichgiang as $index => $ngayday) {
+            $thoigian_batdau = mysqli_real_escape_string($dbc, $thoigian_batdau[$index]);
+            $thoigian_ketthuc = mysqli_real_escape_string($dbc, $thoigian_ketthuc[$index]);
+
+
+            $qLichGiang = "INSERT INTO lichgiangday (MaLichHocPhan, LichGiang, GioBatDau, GioKetThuc) 
+                           VALUES ('$MaLichHocPhan', '$ngayday', '$thoigian_batdau', '$thoigian_ketthuc')";
+            @mysqli_query($dbc, $qLichGiang);
+        }
         session_start(); // Bắt đầu phiên
         if ($r) { // If it ran OK.
             // Print a message:
-            $_SESSION['success_message'] = 'Đã thêm học phần thành công!';
+            $_SESSION['success_message'] = 'Đã thêm lịch học phần thành công!';
             // Chuyển hướng đến index
             header("Location: index.php");
             ob_end_flush();
@@ -57,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         } else { // If it did not run OK.
             echo '<h1>System Error</h1>
             <p class="error">You could not be registered due to a system error. We apologize for any inconvenience.</p>';
-            echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $q . '</p>';
+            echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $qLichHocPhan . '</p>';
         }
         mysqli_close($dbc); // Close the database connection.
         exit();
@@ -103,11 +146,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="row">
                             <div class="col-md-9">
                                 <div class="form-group">
-                                    <label>Mã lịch giảng<span class="text-danger"> (*)</span></label>
+                                    <label>Mã lịch học phần<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="MaLichGiang" value="">
-                                        <?php if (isset($errors['MaLichGiang'])): ?>
-                                            <small class="text-danger"><?php echo $errors['MaLichGiang']; ?></small>
+                                        <input class="form-control" type="text" name="MaLichHocPhan"
+                                            value="<?php echo isset($_POST['MaLichHocPhan']) ? htmlspecialchars($_POST['MaLichHocPhan']) : ''; ?>">
+                                        <?php if (isset($errors['MaLichHocPhan'])): ?>
+                                            <small class="text-danger"><?php echo $errors['MaLichHocPhan']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -115,7 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Lớp học phần<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="lophocphan" value="">
+                                        <input class="form-control" type="text" name="lophocphan"
+                                            value="<?php echo isset($_POST['lophocphan']) ? htmlspecialchars($_POST['lophocphan']) : ''; ?>">
                                         <?php if (isset($errors['lophocphan'])): ?>
                                             <small class="text-danger"><?php echo $errors['lophocphan']; ?></small>
                                         <?php endif; ?>
@@ -143,12 +188,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <label>Lịch dạy <span class="text-danger"> (*)</span></label>
                                     <button type="button" id="addScheduleButton">Thêm lịch dạy</button>
                                     <div id="scheduleContainer"></div>
+
+                                    <?php if (isset($errors['lichgiang']) && isset($errors['thoigian'])): ?>
+                                        <small class="text-danger">Vui lòng thêm ít nhất 1 lịch giảng dạy</small>
+                                    <?php else: ?>
+                                        <?php if (isset($errors['lichgiang'])): ?>
+                                            <small class="text-danger"><?php echo $errors['lichgiang']; ?></small>
+                                        <?php endif; ?>
+                                        <?php if (isset($errors['thoigian'])): ?>
+                                            <small class="text-danger"><?php echo $errors['thoigian']; ?></small>
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Địa điểm học<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="DiaDiem" value="">
+                                        <input class="form-control" type="text" name="DiaDiem"
+                                            value="<?php echo isset($_POST['DiaDiem']) ? htmlspecialchars($_POST['DiaDiem']) : ''; ?>">
                                         <?php if (isset($errors['DiaDiem'])): ?>
                                             <small class="text-danger"><?php echo $errors['DiaDiem']; ?></small>
                                         <?php endif; ?>
@@ -163,14 +220,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Thời gian bắt đầu <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <input type="date" class="form-control" name="DateStart" required style="width: auto;">
+                                        <input type="date" class="form-control" name="DateStart" required style="width: auto;"
+                                            value="<?php echo isset($_POST['DateStart']) ? htmlspecialchars($_POST['DateStart']) : ''; ?>">
                                     </div>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Thời gian kết thúc <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <input type="date" class="form-control" name="DateEnd" required style="width: auto;">
+                                        <input type="date" class="form-control" name="DateEnd" required style="width: auto;"
+                                            value="<?php echo isset($_POST['DateEnd']) ? htmlspecialchars($_POST['DateEnd']) : ''; ?>">
                                     </div>
                                 </div>
 
@@ -200,36 +259,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <!-- Chức năng thêm trường nhập để thêm lịch giảng dạy -->
     <script>
+        const scheduleContainer = document.getElementById('scheduleContainer');
+
         document.getElementById('addScheduleButton').addEventListener('click', function() {
-            const scheduleContainer = document.getElementById('scheduleContainer');
+            addScheduleRow();
+        });
+
+        function addScheduleRow(day = '', startTime = '', endTime = '') {
             const newSchedule = document.createElement('div');
             newSchedule.classList.add('row');
 
             newSchedule.innerHTML = `
-        <div class="col-md-2">
-            <select class="form-control" name="Lichgiang[]">
-                <option value="">Chọn ngày</option>
-                <option value="2">Thứ Hai</option>
-                <option value="3">Thứ Ba</option>
-                <option value="4">Thứ Tư</option>
-                <option value="5">Thứ Năm</option>
-                <option value="6">Thứ Sáu</option>
-                <option value="7">Thứ Bảy</option>
-                <option value="1">Chủ Nhật</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input class="form-control" type="time" name="thoigian_batdau[]">
-        </div>
-        <p style="margin-top: 10px;">
-            <i class="fa fa-arrow-right" aria-hidden="true"></i>
-        </p>
-        <div class="col-md-2">
-            <input class="form-control" type="time" name="thoigian_ketthuc[]">
-        </div>
-        <div class="col-md-offset-2 col-md-2   ">
-            <button type="button" class="btn btn-danger remove-button";"><i class="fa-solid fa-trash"></i></button>
-        </div>
+            <div class="col-md-2">
+                <select class="form-control" name="Lichgiang[]">
+                    <option value="">Chọn ngày</option>
+                    <option value="2" ${day === '2' ? 'selected' : ''}>Thứ Hai</option>
+                    <option value="3" ${day === '3' ? 'selected' : ''}>Thứ Ba</option>
+                    <option value="4" ${day === '4' ? 'selected' : ''}>Thứ Tư</option>
+                    <option value="5" ${day === '5' ? 'selected' : ''}>Thứ Năm</option>
+                    <option value="6" ${day === '6' ? 'selected' : ''}>Thứ Sáu</option>
+                    <option value="7" ${day === '7' ? 'selected' : ''}>Thứ Bảy</option>
+                    <option value="1" ${day === '1' ? 'selected' : ''}>Chủ Nhật</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input class="form-control" type="time" name="thoigian_batdau[]" value="${startTime}">
+            </div>
+            <p style="margin-top: 10px;">
+                <i class="fa fa-arrow-right" aria-hidden="true"></i>
+            </p>
+            <div class="col-md-2">
+                <input class="form-control" type="time" name="thoigian_ketthuc[]" value="${endTime}">
+            </div>
+            <div class="col-md-offset-2 col-md-2">
+                <button type="button" class="btn btn-danger remove-button"><i class="fa-solid fa-trash"></i></button>
+            </div>
         `;
 
             // Thêm mục lịch mới vào container
@@ -239,7 +303,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             newSchedule.querySelector('.remove-button').addEventListener('click', function() {
                 scheduleContainer.removeChild(newSchedule);
             });
-        });
+        }
+
+        // Khi trang được tải, kiểm tra và thêm lịch giảng dạy nếu có dữ liệu
+        <?php if (isset($_POST['Lichgiang'])): ?>
+            <?php foreach ($_POST['Lichgiang'] as $index => $day): ?>
+                addScheduleRow("<?php echo $day; ?>", "<?php echo isset($_POST['thoigian_batdau'][$index]) ? htmlspecialchars($_POST['thoigian_batdau'][$index]) : ''; ?>", "<?php echo isset($_POST['thoigian_ketthuc'][$index]) ? htmlspecialchars($_POST['thoigian_ketthuc'][$index]) : ''; ?>");
+            <?php endforeach; ?>
+        <?php endif; ?>
     </script>
 
 
