@@ -6,7 +6,7 @@ require BASE_PATH . './Database/connect-database.php';
 
 // Truy vấn chỉ lấy các bản ghi có trạng thái == 0
 $query = "
-SELECT giangvien.MaGiangVien,giangvien.HoGiangVien, giangvien.TenGiangVien, giangvien.HocVi, giangvien.ChucDanh, khoa.TenKhoa,giangvien.TrangThai
+SELECT giangvien.*, khoa.TenKhoa
 FROM giangvien
 JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa 
 WHERE giangvien.TrangThai =0";
@@ -71,12 +71,13 @@ if (isset($_GET['id'])) {
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th style="width: 15%;">Họ giảng viên</th>
-                                            <th style="display: flex;justify-content: center;align-content: center; width: 15%;"">Tên giảng viên</th>
-                                            <th style=" width: 8% ;display: flex;justify-content: center;align-content: center;">Học Vị</th>
-                                            <th style=" display: flex;justify-content: center;align-content: center; width: 10%;">Chức Danh</th>
-                                            <th style="display: flex;justify-content: center;align-content: center; width: 10%;">Khoa</th>
-                                            <th style="width: 20%;"></th>
+                                            <th>Ảnh đại diện</th>
+                                            <th>Họ tên giảng viên</th>
+                                            <th>Khoa</th>
+                                            <th>Học vị</th>
+                                            <th>Chức danh</th>
+                                            <th></th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -84,11 +85,13 @@ if (isset($_GET['id'])) {
                                         if (mysqli_num_rows($result) > 0) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
-                                                echo "<td>{$row['HoGiangVien']}</td>";
-                                                echo "<td>{$row['TenGiangVien']}</td>";
+                                                echo "<td style='text-align: center; vertical-align: middle;'>
+                                                <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
+                                                </td>";
+                                                echo "<td> {$row['HoGiangVien']} {$row['TenGiangVien']}</td>";
+                                                echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>{$row['HocVi']}</td>";
                                                 echo "<td>{$row['ChucDanh']}</td>";
-                                                echo "<td>{$row['TenKhoa']}</td>"; // Nếu bạn cũng muốn hiển thị tên khoa
                                                 echo "<td>";
                                                 echo "<a href='?id={$row['MaGiangVien']}' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
                                                 echo "</td>";

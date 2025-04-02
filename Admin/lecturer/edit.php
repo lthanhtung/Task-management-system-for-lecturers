@@ -15,7 +15,7 @@ $result = mysqli_query($dbc, $sql);
 $rows = mysqli_fetch_array($result);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $errors = array(); // Khởi tạo mảng lỗi
+    $errors = array();
 
     // Kiểm tra họ giảng viên
     if (empty($_POST['HoGiangVien'])) {
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $Khoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
     }
 
-    //Kiểm tra trạng thái
+    // Kiểm tra trạng thái
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] == 'day') {
             $trangthai = 1;
@@ -136,6 +136,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $trangthai = 2;
         } else {
             $trangthai = 3;
+        }
+    }
+
+    // Xử lý ảnh đại diện
+    $imagePathForDB = $rows['AnhDaiDien']; // Giữ đường dẫn ảnh cũ mặc định
+    if (isset($_POST['Khoa']) && empty($errors)) {
+        $MaKhoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
+        $queryKhoa = "SELECT TenKhoa FROM khoa WHERE MaKhoa = '$MaKhoa' AND TrangThai = 1";
+        $resultKhoa = mysqli_query($dbc, $queryKhoa);
+
+        if ($resultKhoa && mysqli_num_rows($resultKhoa) > 0) {
+            $rowKhoa = mysqli_fetch_assoc($resultKhoa);
+            $tenKhoa = $rowKhoa['TenKhoa'];
+
+            // Đường dẫn thư mục khoa
+            $facultyPath = BASE_PATH . '/Public/img/faculty/' . $tenKhoa;
+
+            // Tạo thư mục nếu chưa tồn tại
+            if (!file_exists($facultyPath)) {
+                if (!mkdir($facultyPath, 0777, true)) {
+                    $errors['system'] = 'Không thể tạo thư mục cho khoa ' . $tenKhoa;
+                }
+            }
+
+            // Xử lý ảnh nếu người dùng chọn ảnh mới
+            if (isset($_FILES['anhdaidien']) && $_FILES['anhdaidien']['error'] == 0) {
+                $file = $_FILES['anhdaidien'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
+
+                $fileName = $HoGiangVien . '_' . $TenGiangVien . '.' . $fileExtension;
+                $destination = $facultyPath . '/' . $fileName;
+                $imagePathForDB = BASE_URL . '/Public/img/faculty/' . $tenKhoa . '/' . $fileName;
+
+                if (!in_array($fileExtension, $allowedTypes)) {
+                    $errors['anhdaidien'] = 'Chỉ chấp nhận file JPG, JPEG, PNG hoặc GIF';
+                } elseif ($file['size'] > 5 * 1024 * 1024) {
+                    $errors['anhdaidien'] = 'Kích thước file không được vượt quá 5MB';
+                } else {
+                    // Xóa ảnh cũ nếu tồn tại (trừ ảnh mặc định)
+                    $oldImagePath = BASE_PATH . str_replace(BASE_URL, '', $rows['AnhDaiDien']);
+                    if (file_exists($oldImagePath) && strpos($oldImagePath, 'avatar-default.png') === false) {
+                        unlink($oldImagePath);
+                    }
+
+                    // Upload ảnh mới
+                    if (!move_uploaded_file($file['tmp_name'], $destination)) {
+                        $errors['anhdaidien'] = 'Không thể upload ảnh đại diện';
+                    }
+                }
+            }
+        } else {
+            $errors['Khoa'] = 'Khoa không tồn tại hoặc không hoạt động';
         }
     }
 
@@ -153,7 +206,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             HocVi = '$hocvi',
             ChucDanh = '$chucdanh',
             MaKhoa = '$Khoa',
-            TrangThai = '$trangthai'
+            TrangThai = '$trangthai',
+            AnhDaiDien = '$imagePathForDB'
         WHERE MaGiangVien = '$id'";
 
         // Cập nhật lịch tiếp sinh viên
@@ -205,7 +259,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <strong class="text-danger">CHỈNH SỬA GIẢNG VIÊN</strong>
                     <a href="./index.php" class="btn-sm btn-info float-right"><i class="fa fa-long-arrow-alt-left"></i> Quay lại</a>
                 </div>
-                <form action="" method="post">
+                <form action="" method="post" enctype="multipart/form-data">
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-9">
@@ -284,6 +338,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
+                                    <label>Ảnh đại diện <span class="text-danger">(*)</span></label>
+                                    <div class="col-md-6">
+                                        <img src="<?php echo $rows['AnhDaiDien']; ?>" alt="Ảnh đại diện" style="width: 100px; height: auto; margin-bottom: 10px;">
+                                        <input type="file" class="form-control" name="anhdaidien" style="width: auto;">
+                                        <?php if (isset($errors['anhdaidien'])): ?>
+                                            <small class="text-danger"><?php echo $errors['anhdaidien']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label>Ngày sinh <span class="text-danger">(*)</span></label>
                                     <input type="date" class="form-control" name="NgaySinh" value="<?php echo $rows['NgaySinh']; ?>" required>
                                 </div>
@@ -338,12 +402,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                             </div>
                         </div>
-                    </div><!-- /.card-body -->
+                    </div>
                 </form>
-            </div><!-- /.card -->
-        </section><!-- /.content -->
-    </div><!-- /.content-wrapper -->
+            </div>
+        </section>
+    </div>
 
-    <!-- jQuery -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
-    <!--
+    <script src="<?php echo BASE_URL ?>/Public/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
+</body>
+
+</html>
+
+<?php
+require_once '../Layout/footer.php';
+?>

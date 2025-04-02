@@ -7,7 +7,7 @@ require_once '../Layout/header.php'
 <?php
 require BASE_PATH . './Database/connect-database.php';
 $query = "
-SELECT giangvien.MaGiangVien,giangvien.HoGiangVien, giangvien.TenGiangVien, giangvien.HocVi, giangvien.ChucDanh, khoa.TenKhoa,giangvien.TrangThai
+SELECT giangvien.*, khoa.TenKhoa
 FROM giangvien
 JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa 
 WHERE giangvien.TrangThai IN (1, 2)";
@@ -86,11 +86,12 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th>Ảnh</th>
+                                            <th>Ảnh đại diện</th>
                                             <th>Họ tên giảng viên</th>
                                             <th>Khoa</th>
                                             <th>Học vị</th>
                                             <th>Chức danh</th>
+                                            <th></th>
                                             <th></th>
                                         </tr>
                                     </thead>
@@ -99,8 +100,10 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                         if (mysqli_num_rows($result) > 0) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
-                                                echo "<td>{$row['HoGiangVien']}</td>";
-                                                echo "<td>{$row['TenGiangVien']}</td>";
+                                                echo "<td style='text-align: center; vertical-align: middle;'>
+                                                <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
+                                                </td>";                                                
+                                                echo "<td> {$row['HoGiangVien']} {$row['TenGiangVien']}</td>";
                                                 echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>{$row['HocVi']}</td>";
                                                 echo "<td>{$row['ChucDanh']}</td>";

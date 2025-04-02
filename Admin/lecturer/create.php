@@ -4,7 +4,7 @@ require_once '../Layout/header.php';
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     require_once BASE_PATH . './Database/connect-database.php';
-    $errors = array(); // Initialize an error array.
+    $errors = array();
 
     // Kiểm tra Mã học Phần
     if (empty($_POST['MaGiangVien'])) {
@@ -19,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    //Kiểm tra họ giảng viên
+    // Kiểm tra họ giảng viên
     if (empty($_POST['HoGiangVien'])) {
         $errors['HoGiangVien'] = 'Họ giảng viên không để trống';
     } else {
@@ -33,13 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $TenGiangVien = mysqli_real_escape_string($dbc, trim($_POST['TenGiangVien']));
     }
 
-    //Ngày sinh
-    //Khoa
+    // Ngày sinh
     if (isset($_POST['NgaySinh'])) {
         $NgaySinh = mysqli_real_escape_string($dbc, trim($_POST['NgaySinh']));
     }
 
-    //Giới tính
+    // Giới tính
     if (isset($_POST['GioiTinh'])) {
         if ($_POST['GioiTinh'] === 'nam') {
             $GioiTinh = 1;
@@ -48,11 +47,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    //Kiểm tra Email
+    // Kiểm tra Email
     if (empty($_POST['Email'])) {
         $errors['Email'] = 'Email không để trống!';
     } else {
-        // Kiểm tra ký tự @
         if (strpos($_POST['Email'], '@') === false) {
             $errors['Email'] = 'Email phải chứa ký tự @!';
         } else {
@@ -71,29 +69,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['SDT'] = 'Số điện thoại không để trống';
     } else {
         $SDT = trim($_POST['SDT']);
-
-        // Kiểm tra xem có phải là số không
         if (!is_numeric($SDT)) {
             $errors['SDT'] = 'Số điện thoại phải là số';
         } else {
-            // Kiểm tra xem có bắt đầu bằng 0 không
             if (substr($SDT, 0, 1) != '0') {
                 $errors['SDT'] = 'Số điện thoại phải bắt đầu bằng 0';
             } else {
-                // Kiểm tra độ dài phải là 11 số
                 if (strlen($SDT) < 11) {
                     $errors['SDT'] = 'Số điện thoại phải có 11 số';
                 }
             }
         }
-
-        // Nếu không có lỗi, mới xử lý dữ liệu
         if (!isset($errors['SDT'])) {
             $SDT = mysqli_real_escape_string($dbc, $SDT);
         }
     }
 
-    //Kiểm tra thứ tiếp sinh viên
+    // Kiểm tra thứ tiếp sinh viên
     if (empty($_POST['thutiep'])) {
         $errors['thutiep'] = 'Vui lòng chọn ngày tiếp sinh viên';
     } else {
@@ -114,21 +106,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $thutiep = 'Chủ Nhật';
         }
     }
-    //Kiểm tra thời gian bắt đầu
+
+    // Kiểm tra thời gian bắt đầu
     if (empty($_POST['gio_batdau'])) {
         $errors['gio_batdau'] = 'Thời gian bắt đầu không để trống';
     } else {
         $gio_batdau = mysqli_real_escape_string($dbc, trim($_POST['gio_batdau']));
     }
 
-    //Kiểm tra thời gian kết thúc
+    // Kiểm tra thời gian kết thúc
     if (empty($_POST['gio_ketthuc'])) {
         $errors['gio_ketthuc'] = 'Thời gian kết thúc không để trống';
     } else {
         $gio_ketthuc = mysqli_real_escape_string($dbc, trim($_POST['gio_ketthuc']));
     }
 
-    //Kiểm tra Địa điểm tiếp sinh viên
+    // Kiểm tra Địa điểm tiếp sinh viên
     if (empty($_POST['diadiem'])) {
         $errors['diadiem'] = 'Địa điểm không để trống';
     } else {
@@ -144,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    //Chức danh
+    // Chức danh
     if (isset($_POST['ChucDanh'])) {
         if ($_POST['ChucDanh'] === 'trg') {
             $chucdanh = 'Trợ giảng';
@@ -159,12 +152,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    //Khoa
+    // Khoa
     if (isset($_POST['Khoa'])) {
         $Khoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
     }
 
-    //Kiểm tra trạng thái
+    // Kiểm tra trạng thái
     if (isset($_POST['TrangThai'])) {
         if ($_POST['TrangThai'] == 'day') {
             $trangthai = 1;
@@ -175,29 +168,92 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
+    // Xử lý ảnh đại diện
+    if (isset($_POST['Khoa']) && empty($errors)) {
+        $MaKhoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
+        $queryKhoa = "SELECT TenKhoa FROM khoa WHERE MaKhoa = '$MaKhoa' AND TrangThai = 1";
+        $resultKhoa = mysqli_query($dbc, $queryKhoa);
+
+        if ($resultKhoa && mysqli_num_rows($resultKhoa) > 0) {
+            $rowKhoa = mysqli_fetch_assoc($resultKhoa);
+            $tenKhoa = $rowKhoa['TenKhoa'];
+
+            // Đường dẫn thư mục khoa
+            $facultyPath = BASE_PATH . '/Public/img/faculty/' . $tenKhoa;
+
+            // Tạo thư mục nếu chưa tồn tại
+            if (!file_exists($facultyPath)) {
+                if (!mkdir($facultyPath, 0777, true)) {
+                    $errors['system'] = 'Không thể tạo thư mục cho khoa ' . $tenKhoa;
+                }
+            }
+
+            // Xử lý ảnh
+            $anhdaidien = '';
+            $defaultAvatar = BASE_PATH . '/Public/img/avatar-default.png';
+
+            if (isset($_FILES['anhdaidien']) && $_FILES['anhdaidien']['error'] == 0) {
+                $file = $_FILES['anhdaidien'];
+                $fileExtension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
+
+                $fileName = $HoGiangVien . '_' . $TenGiangVien . '.' . $fileExtension;
+                $destination = $facultyPath . '/' . $fileName;
+                $anhdaidien = BASE_URL . '/Public/img/faculty/' . $tenKhoa . '/' . $fileName;
+
+                if (!in_array($fileExtension, $allowedTypes)) {
+                    $errors['anhdaidien'] = 'Chỉ chấp nhận file JPG, JPEG, PNG hoặc GIF';
+                } elseif ($file['size'] > 5 * 1024 * 1024) {
+                    $errors['anhdaidien'] = 'Kích thước file không được vượt quá 5MB';
+                } elseif (!move_uploaded_file($file['tmp_name'], $destination)) {
+                    $errors['anhdaidien'] = 'Không thể upload ảnh đại diện';
+                }
+            } else {
+                // Dùng ảnh mặc định nếu không chọn ảnh
+                $fileName = $HoGiangVien . '_' . $TenGiangVien . '.png';
+                $destination = $facultyPath . '/' . $fileName;
+                $anhdaidien = BASE_URL . '/Public/img/faculty/' . $tenKhoa . '/' . $fileName;
+
+                if (file_exists($defaultAvatar)) {
+                    if (!copy($defaultAvatar, $destination)) {
+                        $errors['anhdaidien'] = 'Không thể sao chép ảnh mặc định';
+                    }
+                } else {
+                    $errors['anhdaidien'] = 'Không tìm thấy ảnh mặc định avatar-default.png';
+                }
+            }
+        } else {
+            $errors['Khoa'] = 'Khoa không tồn tại hoặc không hoạt động';
+        }
+    }
+
+    // Nếu không có lỗi thì insert dữ liệu
     if (empty($errors)) {
-        // Make the query:
-        $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien,TenGiangVien,NgaySinh,GioiTinh,Email,SoDienThoai,HocVi,ChucDanh,MaKhoa,TrangThai) 
-        VALUES ('$MaGiangVien', '$HoGiangVien','$TenGiangVien','$NgaySinh','$GioiTinh','$Email','$SDT','$hocvi','$chucdanh','$Khoa','$trangthai')";
-        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien,ThuTiepSinhVien,GioBatDau,GioKetThuc,DiaDiem) VALUES ('$MaGiangVien','$thutiep','$gio_batdau','$gio_ketthuc','$diadiem')";
-        $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan,MatKhau,Quyen) VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v','User')";
-        $r1 = @mysqli_query($dbc, $queryGiangVien); // Run the query.
-        $r2 = @mysqli_query($dbc, $queryLichTiep); // Run the query.
+        $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien, TenGiangVien, NgaySinh, GioiTinh, Email, SoDienThoai, HocVi, ChucDanh, MaKhoa, TrangThai, AnhDaiDien) 
+        VALUES ('$MaGiangVien', '$HoGiangVien', '$TenGiangVien', '$NgaySinh', '$GioiTinh', '$Email', '$SDT', '$hocvi', '$chucdanh', '$Khoa', '$trangthai', '$anhdaidien')";
+
+        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien, ThuTiepSinhVien, GioBatDau, GioKetThuc, DiaDiem) 
+        VALUES ('$MaGiangVien', '$thutiep', '$gio_batdau', '$gio_ketthuc', '$diadiem')";
+
+        $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan, MatKhau, Quyen) 
+        VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v', 'User')";
+
+        $r1 = @mysqli_query($dbc, $queryGiangVien);
+        $r2 = @mysqli_query($dbc, $queryLichTiep);
         $r3 = @mysqli_query($dbc, $queryTaiKhoanGiangVien);
-        session_start(); // Bắt đầu phiên
-        if ($r1 && $r2 && $r3) { // If it ran OK.
-            // Print a message:
+
+        session_start();
+        if ($r1 && $r2 && $r3) {
             $_SESSION['success_message'] = 'Đã thêm giảng viên thành công!';
-            // Chuyển hướng đến index
             header("Location: index.php");
             ob_end_flush();
             exit();
-        } else { // If it did not run OK.
+        } else {
             echo '<h1>System Error</h1>
             <p class="error">You could not be registered due to a system error. We apologize for any inconvenience.</p>';
-            echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $q . '</p>';
+            echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $queryGiangVien . '</p>';
         }
-        mysqli_close($dbc); // Close the database connection.
+        mysqli_close($dbc);
         exit();
     }
 }
@@ -211,20 +267,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh sách công việc</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
-    <!-- DataTables -->
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
-    <!-- Theme style -->
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
 </head>
 
 <body>
-    <!-- Content Wrapper. Contains page content -->
     <div class="content-wrapper">
-        <!-- Main content -->
         <section class="content my-2">
-            <!-- Default box -->
             <div class="card">
                 <div class="card-header">
                     <div class="row">
@@ -236,21 +287,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         </div>
                     </div>
                 </div>
-                <form action="" method="post">
+                <form action="" method="post" enctype="multipart/form-data">
                     <div class="card-body">
                         <div class="row">
-                            <!-- Ghi -->
                             <div class="col-md-9">
                                 <div class="form-group">
                                     <label>Mã Giảng Viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input class="form-control" type="text" name="MaGiangVien" value="">
                                         <?php if (isset($errors['MaGiangVien'])): ?>
-                                            <small class=" text-danger"><?php echo $errors['MaGiangVien']; ?></small>
+                                            <small class="text-danger"><?php echo $errors['MaGiangVien']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Họ Giảng Viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
@@ -269,7 +318,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Email <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
@@ -279,7 +327,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Lịch tiếp sinh viên <span class="text-danger"> (*)</span></label>
                                     <div class="row">
@@ -298,19 +345,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                                 <small class="text-danger"><?php echo $errors['thutiep']; ?></small>
                                             <?php endif; ?>
                                         </div>
-                                        <!-- Thời gian bắt đầu -->
                                         <div class="col-md-2">
                                             <input class="form-control" type="time" name="gio_batdau" value="">
                                             <?php if (isset($errors['gio_batdau'])): ?>
                                                 <small class="text-danger"><?php echo $errors['gio_batdau']; ?></small>
                                             <?php endif; ?>
                                         </div>
-                                        
                                         <p style="margin-top: 10px;">
                                             <i class="fa fa-arrow-right" aria-hidden="true"></i>
                                         </p>
-
-                                        <!-- Thời gian kết thúc -->
                                         <div class="col-md-2">
                                             <input class="form-control" type="time" name="gio_ketthuc" value="">
                                             <?php if (isset($errors['gio_ketthuc'])): ?>
@@ -319,7 +362,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </div>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Địa điểm gặp sinh viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
@@ -329,7 +371,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Trạng Thái <span class="text-danger">(*)</span></label>
                                     <div class="col-md-3">
@@ -341,26 +382,33 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     </div>
                                 </div>
                             </div>
-                            <!-- Chọn  -->
                             <div class="col-md-3">
+                                <div class="form-group">
+                                    <label>Ảnh đại diện <span class="text-danger">(*)</span></label>
+                                    <div class="col-md-6">
+                                        <input type="file" class="form-control" name="anhdaidien" style="width: auto;">
+                                        <?php if (isset($errors['anhdaidien'])): ?>
+                                            <small class="text-danger"><?php echo $errors['anhdaidien']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
                                 <div class="form-group">
                                     <label>Ngày sinh <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <input type="date" class="form-control" name="NgaySinh" required style="width: auto;">
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Khoa <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <select class="form-control" name="Khoa" style="width: auto;">
                                             <?php
                                             require_once BASE_PATH . './Database/connect-database.php';
-                                            $sql = "Select * FROM khoa where TrangThai=1";
+                                            $sql = "SELECT * FROM khoa WHERE TrangThai=1";
                                             $result = mysqli_query($dbc, $sql);
                                             if (mysqli_num_rows($result) <> 0) {
                                                 while ($row = mysqli_fetch_array($result)) {
-                                                    echo "	<option value='$row[MaKhoa]'>$row[TenKhoa]</option>";
+                                                    echo "<option value='$row[MaKhoa]'>$row[TenKhoa]</option>";
                                                 }
                                             }
                                             ?>
@@ -376,7 +424,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Số điện thoại <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-7">
@@ -386,7 +433,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Học vị <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
@@ -396,7 +442,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </select>
                                     </div>
                                 </div>
-
                                 <div class="form-group">
                                     <label>Chức danh <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
@@ -411,22 +456,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 </div>
                             </div>
                             <div class="form-group">
-                                <div class="col-md-offset-2 col-md-12   ">
+                                <div class="col-md-offset-2 col-md-12">
                                     <button class="btn-sm btn-success" type="submit" name="create"> Lưu [Thêm] <i class="fa fa-save"></i> </button>
                                 </div>
                             </div>
                         </div>
-                    </div><!-- /.card-body -->
+                    </div>
                 </form>
-            </div><!-- /.card -->
-        </section><!-- /.content -->
-    </div><!-- /.content-wrapper -->
+            </div>
+        </section>
+    </div>
 
-    <!-- jQuery -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
-    <!-- Bootstrap 4 -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- DataTables  & Plugins -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables/jquery.dataTables.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
@@ -439,11 +481,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
-    <!-- AdminLTE App -->
     <script src="<?php echo BASE_URL ?>/dist/js/adminlte.min.js"></script>
-    <!-- AdminLTE for demo purposes -->
     <script src="<?php echo BASE_URL ?>/dist/js/demo.js"></script>
-    <!-- Page specific script -->
     <script>
         $(function() {
             $("#example1").DataTable({
@@ -462,7 +501,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             });
         });
     </script>
-
 </body>
 
 </html>
