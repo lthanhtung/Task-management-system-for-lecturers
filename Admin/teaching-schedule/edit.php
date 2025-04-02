@@ -1,51 +1,56 @@
 <?php
 ob_start();
+session_start();
 require_once '../Layout/header.php';
 require_once BASE_PATH . './Database/connect-database.php';
 
-//Truy vấn để lấy được 
-$id = $_GET['MaLichHocPhan'];
+// Lấy và làm sạch $id
+if (!isset($_GET['MaLichHocPhan']) || empty($_GET['MaLichHocPhan'])) {
+    die("Mã lịch học phần không hợp lệ.");
+}
+$id = mysqli_real_escape_string($dbc, $_GET['MaLichHocPhan']);
 
+// Lấy thông tin từ cơ sở dữ liệu để hiển thị
+$sql = "SELECT lichhocphan.*, lichgiangday.*
+        FROM lichhocphan
+        LEFT JOIN lichgiangday ON lichgiangday.MaLichHocPhan = lichhocphan.MaLichHocPhan
+        WHERE lichhocphan.MaLichHocPhan = '$id'";
+$result = mysqli_query($dbc, $sql);
+$rows = mysqli_fetch_array($result);
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $errors = array(); // Initialize an error array.
+    $errors = array();
 
-    //Mã lịch học phần
+    // Mã lịch học phần
     if (empty($_POST['MaLichHocPhan'])) {
         $errors['MaLichHocPhan'] = 'Mã lịch học phần không để trống!';
     } else {
         $MaLichHocPhan = mysqli_real_escape_string($dbc, trim($_POST['MaLichHocPhan']));
-        $sql = "SELECT * FROM lichhocphan WHERE MaLichHocPhan = '$MaLichHocPhan'";
-        $result = mysqli_query($dbc, $sql);
-
-        if (mysqli_num_rows($result) > 0) {
-            $errors['MaLichHocPhan'] = 'Mã học phần bị trùng';
-        }
     }
 
-    //Lớp học phần
+    // Lớp học phần
     if (empty($_POST['lophocphan'])) {
         $errors['lophocphan'] = 'Chưa nhập lớp học phần';
     } else {
         $lophocphan = mysqli_real_escape_string($dbc, trim($_POST['lophocphan']));
     }
 
-    //Tên học phần
+    // Tên học phần
     if (isset($_POST['TenHocPhan'])) {
         $Mahocphan = mysqli_real_escape_string($dbc, trim($_POST['TenHocPhan']));
     }
 
-    //Thời gian bắt đầu
+    // Thời gian bắt đầu
     if (isset($_POST['DateStart'])) {
         $DateStart = mysqli_real_escape_string($dbc, trim($_POST['DateStart']));
     }
 
-    //Thời gian kết thúc
+    // Thời gian kết thúc
     if (isset($_POST['DateEnd'])) {
         $DateEnd = mysqli_real_escape_string($dbc, trim($_POST['DateEnd']));
     }
 
-    //Lịch giảng dạy
+    // Lịch giảng dạy
     $lichgiang = isset($_POST['Lichgiang']) ? $_POST['Lichgiang'] : [];
     $thoigian_batdau = isset($_POST['thoigian_batdau']) ? $_POST['thoigian_batdau'] : [];
     $thoigian_ketthuc = isset($_POST['thoigian_ketthuc']) ? $_POST['thoigian_ketthuc'] : [];
@@ -68,59 +73,86 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $DiaDiem = mysqli_real_escape_string($dbc, trim($_POST['DiaDiem']));
     }
 
-    //Trạng thái
+    // Trạng thái
     if (isset($_POST['TrangThai'])) {
-        if ($_POST['TrangThai'] === 'xuat') {
-            $trangthai = 1;
-        } else {
-            $trangthai = 2;
-        }
+        $trangthai = ($_POST['TrangThai'] === 'xuat') ? 1 : 2;
     }
 
     if (empty($errors)) {
-        // Make the query:
-        $qLichHocPhan = "INSERT INTO lichhocphan (MaLichHocPhan, MaHocPhan,LopHocPhan,ThoiGianBatDau,ThoiGianKetThuc,DiaDiem,TrangThai) VALUES ('$MaLichHocPhan', '$Mahocphan','$lophocphan','$DateStart','$DateEnd','$DiaDiem','$trangthai')";
-        $r = @mysqli_query($dbc, $qLichHocPhan); // Run the query.
+        $qLichHocPhan = "UPDATE lichhocphan 
+                         SET MaHocPhan = '$Mahocphan', 
+                             LopHocPhan = '$lophocphan', 
+                             ThoiGianBatDau = '$DateStart', 
+                             ThoiGianKetThuc = '$DateEnd', 
+                             DiaDiem = '$DiaDiem', 
+                             TrangThai = '$trangthai' 
+                         WHERE MaLichHocPhan = '$id'";
+        $r = mysqli_query($dbc, $qLichHocPhan);
 
-        // Lưu lịch giảng dạy vào bảng lichgiang
-        foreach ($lichgiang as $index => $ngayday) {
-            $thoigian_batdau = mysqli_real_escape_string($dbc, $thoigian_batdau[$index]);
-            $thoigian_ketthuc = mysqli_real_escape_string($dbc, $thoigian_ketthuc[$index]);
+        if ($r) {
+            // Xử lý lịch giảng dạy
+            $existingSchedules = [];
+            $sql_lichgiang = "SELECT * FROM lichgiangday WHERE MaLichHocPhan = '$id'";
+            $result_lichgiang = mysqli_query($dbc, $sql_lichgiang);
+            while ($row = mysqli_fetch_assoc($result_lichgiang)) {
+                $existingSchedules[$row['LichGiang']] = [
+                    'GioBatDau' => $row['GioBatDau'],
+                    'GioKetThuc' => $row['GioKetThuc'],
+                    'MaLichGiang' => $row['MaLichGiang'] // Sử dụng MaLichGiang thay vì id
+                ];
+            }
 
+            $newSchedules = [];
+            foreach ($lichgiang as $index => $ngayday) {
+                $startTime = mysqli_real_escape_string($dbc, $thoigian_batdau[$index]);
+                $endTime = mysqli_real_escape_string($dbc, $thoigian_ketthuc[$index]);
+                $newSchedules[$ngayday] = [
+                    'GioBatDau' => $startTime,
+                    'GioKetThuc' => $endTime
+                ];
+            }
 
-            $qLichGiang = "INSERT INTO lichgiangday (MaLichHocPhan, LichGiang, GioBatDau, GioKetThuc) 
-                           VALUES ('$MaLichHocPhan', '$ngayday', '$thoigian_batdau', '$thoigian_ketthuc')";
-            @mysqli_query($dbc, $qLichGiang);
-        }
-        session_start(); // Bắt đầu phiên
-        if ($r) { // If it ran OK.
-            // Print a message:
-            $_SESSION['success_message'] = 'Đã thêm lịch học phần thành công!';
-            // Chuyển hướng đến index
+            // So sánh và cập nhật lịch giảng dạy
+            foreach ($newSchedules as $day => $times) {
+                if (isset($existingSchedules[$day])) {
+                    if (
+                        $existingSchedules[$day]['GioBatDau'] !== $times['GioBatDau'] ||
+                        $existingSchedules[$day]['GioKetThuc'] !== $times['GioKetThuc']
+                    ) {
+                        $maLichGiang = $existingSchedules[$day]['MaLichGiang'];
+                        $qUpdateSchedule = "UPDATE lichgiangday 
+                                   SET GioBatDau='{$times['GioBatDau']}', GioKetThuc='{$times['GioKetThuc']}' 
+                                   WHERE MaLichGiang='$maLichGiang'";
+                        mysqli_query($dbc, $qUpdateSchedule);
+                    }
+                    unset($existingSchedules[$day]);
+                } else {
+                    $qInsertSchedule = "INSERT INTO lichgiangday (MaLichHocPhan, LichGiang, GioBatDau, GioKetThuc) 
+                               VALUES ('$id', '$day', '{$times['GioBatDau']}', '{$times['GioKetThuc']}')";
+                    mysqli_query($dbc, $qInsertSchedule);
+                }
+            }
+
+            // Xóa các lịch không còn trong lịch mới
+            foreach ($existingSchedules as $day => $schedule) {
+                $maLichGiang = $schedule['MaLichGiang'];
+                $qDeleteSchedule = "DELETE FROM lichgiangday WHERE MaLichGiang='$maLichGiang'";
+                mysqli_query($dbc, $qDeleteSchedule);
+            }
+
+            $_SESSION['success_message'] = 'Đã cập nhật lịch học phần thành công!';
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
             header("Location: index.php");
-            ob_end_flush();
             exit();
-        } else { // If it did not run OK.
-            echo '<h1>System Error</h1>
-            <p class="error">You could not be registered due to a system error. We apologize for any inconvenience.</p>';
-            echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $qLichHocPhan . '</p>';
+        } else {
+            echo '<h1>System Error</h1><p class="error">Cập nhật thất bại: ' . mysqli_error($dbc) . '</p>';
+            echo '<p>Query: ' . $qLichHocPhan . '</p>';
         }
-        mysqli_close($dbc); // Close the database connection.
+        mysqli_close($dbc);
         exit();
     }
-    mysqli_close($dbc);
-} else {
-    //Láy thông tin từ cơ sở dữ liệu để hiển thị
-    $sql =
-        "
-    SELECT lichhocphan.*,lichgiangday.*
-    FROM lichhocphan
-    JOIN lichgiangday
-    ON lichgiangday.MaLichHocPhan = lichhocphan.MaLichHocPhan
-    WHERE lichgiangday.MaLichHocPhan ='$id'
-    ";
-    $result = mysqli_query($dbc, $sql);
-    $rows = mysqli_fetch_array($result);
 }
 ?>
 
@@ -165,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <label>Mã lịch học phần<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input readonly class="form-control" type="text" name="MaLichHocPhan"
-                                            value="<?php if (isset($_POST['MaLichHocPhan'])) echo $lophocphan;
+                                            value="<?php if (isset($_POST['MaLichHocPhan'])) echo $MaLichHocPhan;
                                                     else echo $rows['MaLichHocPhan']; ?>">
                                     </div>
                                 </div>
@@ -174,10 +206,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <label>Lớp học phần<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input class="form-control" type="text" name="lophocphan"
-                                            value="<?php if (isset($_POST['lophocphan'])) echo $lophocphan;
-                                                    else echo $rows['LopHocPhan']; ?>">
-
-
+                                            value="<?php
+                                                    if (isset($_POST['lophocphan'])) {
+                                                        if (empty($_POST['lophocphan'])) {
+                                                            echo $rows['LopHocPhan'];
+                                                        } else {
+                                                            echo $_POST['lophocphan'];
+                                                        }
+                                                    } else {
+                                                        echo htmlspecialchars($rows['LopHocPhan']);
+                                                    }
+                                                    ?>">
                                         <?php if (isset($errors['lophocphan'])): ?>
                                             <small class="text-danger"><?php echo $errors['lophocphan']; ?></small>
                                         <?php endif; ?>
@@ -224,8 +263,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Địa điểm học <span class="text-danger">(*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="DiaDiem" required style="width: auto;"
-                                            value="<?php echo isset($_POST['DiaDiem']) ? htmlspecialchars($_POST['DiaDiem']) : $rows['DiaDiem']; ?>">
+                                        <input class="form-control" type="text" name="DiaDiem"
+                                            value="<?php
+                                                    if (isset($_POST['DiaDiem'])) {
+                                                        if (empty($_POST['DiaDiem'])) {
+                                                            echo $rows['DiaDiem'];
+                                                        } else {
+                                                            echo htmlspecialchars($_POST['DiaDiem']);
+                                                        }
+                                                    } else {
+                                                        echo $rows['DiaDiem'];
+                                                    }
+                                                    ?>">
                                         <?php if (isset($errors['DiaDiem'])): ?>
                                             <small class="text-danger"><?php echo $errors['DiaDiem']; ?></small>
                                         <?php endif; ?>

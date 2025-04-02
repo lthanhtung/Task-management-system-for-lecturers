@@ -17,7 +17,7 @@ if (isset($_GET['id'])) {
     $id = $_GET['id'];
 
     // Xóa bản ghi trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("DELETE FROM lichhocphan WHERE MaLichGiang = ?");
+    $stmt = $dbc->prepare("DELETE FROM lichhocphan WHERE MaLichHocPhan = ?");
     $stmt->bind_param("s", $id); // 's' cho string
 
     if ($stmt->execute()) {
@@ -72,10 +72,11 @@ if (isset($_GET['id'])) {
                                     <thead>
                                         <tr>
                                             <th style="width: 15%;">Tên học phần</th>
-                                            <th style="width: 8%;">Lịch dạy </th>
-                                            <th style="width: 10%;">Thời gian bắt đầu</th>
-                                            <th style="width: 10%;">Thời gian két thúc</th>
-                                            <th style="width: 7%;"></th>
+                                            <th style="width: 10%;">Lớp học phần </th>
+                                            <th style="width: 12%;">Thời gian bắt đầu</th>
+                                            <th style="width: 12%;">Thời gian két thúc</th>
+                                            <th style="width: 10%;">Địa điểm </th>
+                                            <th style="width: 14%;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -84,16 +85,12 @@ if (isset($_GET['id'])) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
                                                 echo "<td >{$row['TenHocPhan']}</td>";
-
-                                                $timeString = $row['LichDay'];
-                                                $days = preg_split('/(?=Thứ)/', $timeString, -1, PREG_SPLIT_NO_EMPTY);
-                                                $formattedTime = implode('<br>', $days); // Nối các ngày bằng <br>
-                                                echo "<td>$formattedTime</td>";
-
+                                                echo "<td>{$row['LopHocPhan']}</td>";
                                                 echo "<td>{$row['ThoiGianBatDau']}</td>";
                                                 echo "<td>{$row['ThoiGianKetThuc']}</td>";
+                                                echo "<td>{$row['DiaDiem']}</td>";
                                                 echo "<td>";
-                                                echo "<a href='?id={$row['MaLichGiang']}' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
+                                                echo "<a href='?id={$row['MaLichHocPhan']}' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
