@@ -90,7 +90,6 @@ require_once '../../config.php';
                         <span class="badge badge-danger navbar-badge">3</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <!-- Nội dung dropdown messages -->
                         <a href="#" class="dropdown-item">
                             <div class="media">
                                 <img src="<?php echo BASE_URL ?>/Public/dist/img/user1-128x128.jpg" alt="User Avatar" class="img-size-50 mr-3 img-circle">
@@ -104,7 +103,6 @@ require_once '../../config.php';
                                 </div>
                             </div>
                         </a>
-                        <!-- Các phần khác của dropdown -->
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
                     </div>
@@ -117,14 +115,12 @@ require_once '../../config.php';
                         <span class="badge badge-warning navbar-badge">15</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <!-- Nội dung dropdown notifications -->
                         <span class="dropdown-item dropdown-header">15 Notifications</span>
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item">
                             <i class="fas fa-envelope mr-2"></i> 4 new messages
                             <span class="float-right text-muted text-sm">3 mins</span>
                         </a>
-                        <!-- Các phần khác của dropdown -->
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
                     </div>
@@ -379,20 +375,24 @@ require_once '../../config.php';
     <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
     <!-- AdminLTE dashboard demo -->
     <script src="<?php echo BASE_URL ?>/Public/dist/js/pages/dashboard.js"></script>
-    <!-- Dark Mode Toggle -->
+    
+    <!-- Dark Mode -->
     <script>
         $(document).ready(function() {
             const darkModeToggle = $('#darkModeToggle');
             const body = $('body');
             const icon = darkModeToggle.find('i');
+            const navbar = $('.main-header.navbar'); // Chọn thẻ nav
 
-            // Kiểm tra nếu đã có dark mode trong localStorage
+            // Kiểm tra trạng thái dark mode từ localStorage
             if (localStorage.getItem('darkMode') === 'enabled') {
                 body.addClass('dark-mode');
                 icon.removeClass('fa-moon').addClass('fa-sun');
+                // Xóa class navbar-white và navbar-light khi dark mode được bật
+                navbar.removeClass('navbar-white navbar-light');
             }
 
-            // Xử lý sự kiện click vào nút toggle
+            // Sự kiện click để chuyển đổi dark mode
             darkModeToggle.on('click', function(e) {
                 e.preventDefault();
                 body.toggleClass('dark-mode');
@@ -400,9 +400,13 @@ require_once '../../config.php';
                 if (body.hasClass('dark-mode')) {
                     localStorage.setItem('darkMode', 'enabled');
                     icon.removeClass('fa-moon').addClass('fa-sun');
+                    // Xóa class navbar-white và navbar-light khi chuyển sang dark mode
+                    navbar.removeClass('navbar-white navbar-light');
                 } else {
                     localStorage.setItem('darkMode', 'disabled');
                     icon.removeClass('fa-sun').addClass('fa-moon');
+                    // Thêm lại class navbar-white và navbar-light khi chuyển về light mode
+                    navbar.addClass('navbar-white navbar-light');
                 }
             });
         });
