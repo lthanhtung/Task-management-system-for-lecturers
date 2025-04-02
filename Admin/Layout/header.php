@@ -2,17 +2,14 @@
 require_once '../../config.php';
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <!-- Google Font: Source Sans Pro -->
-    <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700&display=fallback">
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <!-- Ionicons -->
@@ -37,7 +34,6 @@ require_once '../../config.php';
     <div class="wrapper">
 
         <?php
-        // Kiểm tra xem trang hiện tại có phải là index.php không
         $isIndexPage = basename($_SERVER['PHP_SELF']) === 'index.php';
         ?>
 
@@ -94,8 +90,8 @@ require_once '../../config.php';
                         <span class="badge badge-danger navbar-badge">3</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <!-- Nội dung dropdown messages -->
                         <a href="#" class="dropdown-item">
-                            <!-- Message Start -->
                             <div class="media">
                                 <img src="<?php echo BASE_URL ?>/Public/dist/img/user1-128x128.jpg" alt="User Avatar" class="img-size-50 mr-3 img-circle">
                                 <div class="media-body">
@@ -107,44 +103,13 @@ require_once '../../config.php';
                                     <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
                                 </div>
                             </div>
-                            <!-- Message End -->
                         </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <!-- Message Start -->
-                            <div class="media">
-                                <img src="<?php echo BASE_URL ?>/Public/dist/img/user8-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
-                                <div class="media-body">
-                                    <h3 class="dropdown-item-title">
-                                        John Pierce
-                                        <span class="float-right text-sm text-muted"><i class="fas fa-star"></i></span>
-                                    </h3>
-                                    <p class="text-sm">I got your message bro</p>
-                                    <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
-                                </div>
-                            </div>
-                            <!-- Message End -->
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <!-- Message Start -->
-                            <div class="media">
-                                <img src="<?php echo BASE_URL ?>/Public/dist/img/user3-128x128.jpg" alt="User Avatar" class="img-size-50 img-circle mr-3">
-                                <div class="media-body">
-                                    <h3 class="dropdown-item-title">
-                                        Nora Silvester
-                                        <span class="float-right text-sm text-warning"><i class="fas fa-star"></i></span>
-                                    </h3>
-                                    <p class="text-sm">The subject goes here</p>
-                                    <p class="text-sm text-muted"><i class="far fa-clock mr-1"></i> 4 Hours Ago</p>
-                                </div>
-                            </div>
-                            <!-- Message End -->
-                        </a>
+                        <!-- Các phần khác của dropdown -->
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
                     </div>
                 </li>
+
                 <!-- Notifications Dropdown Menu -->
                 <li class="nav-item dropdown">
                     <a class="nav-link" data-toggle="dropdown" href="#">
@@ -152,26 +117,26 @@ require_once '../../config.php';
                         <span class="badge badge-warning navbar-badge">15</span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
+                        <!-- Nội dung dropdown notifications -->
                         <span class="dropdown-item dropdown-header">15 Notifications</span>
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item">
                             <i class="fas fa-envelope mr-2"></i> 4 new messages
                             <span class="float-right text-muted text-sm">3 mins</span>
                         </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-users mr-2"></i> 8 friend requests
-                            <span class="float-right text-muted text-sm">12 hours</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-file mr-2"></i> 3 new reports
-                            <span class="float-right text-muted text-sm">2 days</span>
-                        </a>
+                        <!-- Các phần khác của dropdown -->
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
                     </div>
                 </li>
+
+                <!-- Dark Mode Toggle Button -->
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="darkModeToggle" role="button">
+                        <i class="fas fa-moon"></i>
+                    </a>
+                </li>
+
                 <li class="nav-item">
                     <a class="nav-link" data-widget="fullscreen" href="#" role="button">
                         <i class="fas fa-expand-arrows-alt"></i>
@@ -190,14 +155,13 @@ require_once '../../config.php';
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
             <a href="index3.html" class="brand-link">
-                <img src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-                    style="opacity: .8">
+                <img src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
                 <span class="brand-text font-weight-light">Vai trò</span>
             </a>
 
             <!-- Sidebar -->
             <div class="sidebar">
-                <!-- Sidebar user panel (optional) -->
+                <!-- Sidebar user panel -->
                 <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                     <div class="image">
                         <img src="<?php echo BASE_URL ?>/Public/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
@@ -222,14 +186,11 @@ require_once '../../config.php';
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <!-- Menu Công việc: Công việc ->Danh sách công việc, Tạo công việc, Danh mục loại công việc -->
+                        <!-- Menu Công việc -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
-                                <p>
-                                    Công việc hành chính
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <p>Công việc hành chính <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -251,23 +212,19 @@ require_once '../../config.php';
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="@Url.Action(" Index","Supplier")" class="nav-link">
+                                    <a href="#" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh mục loại công việc</p>
                                     </a>
                                 </li>
-
                             </ul>
                         </li>
 
-                        <!--Menu dành cho Khoa-->
+                        <!-- Menu Khoa -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-building-columns"></i>
-                                <p>
-                                    Khoa
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <p>Khoa <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -285,15 +242,11 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-
-                        <!-- Menu Giảng viên: Danh sách giảng viên, Thêm giảng viên-->
+                        <!-- Menu Giảng viên -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
-                                <i class="fa-solid fa-chalkboard-teacher "></i>
-                                <p>
-                                    Giảng Viên
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <i class="fa-solid fa-chalkboard-teacher"></i>
+                                <p>Giảng Viên <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -310,14 +263,12 @@ require_once '../../config.php';
                                 </li>
                             </ul>
                         </li>
-                        <!--Menu dành cho Học phần-->
+
+                        <!-- Menu Học phần -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
-                                <i class="fa fa-book "></i>
-                                <p>
-                                    Học phần
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <i class="fa fa-book"></i>
+                                <p>Học phần <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -335,14 +286,11 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-                        <!--Menu dành cho lịch giảng dạy-->
+                        <!-- Menu Lịch học phần -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-calendar"></i>
-                                <p>
-                                    Lịch học phần
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <p>Lịch học phần <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -351,14 +299,12 @@ require_once '../../config.php';
                                         <p>Danh sách lịch học phần</p>
                                     </a>
                                 </li>
-
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thông tin lịch giảng dạy</p>
                                     </a>
                                 </li>
-
                                 <li class="nav-item">
                                     <a href="../teaching-schedule/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
@@ -368,14 +314,11 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-                        <!--Menu dành cho Tài khoản-->
+                        <!-- Menu Tài khoản -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-user"></i>
-                                <p>
-                                    Tài khoản
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
+                                <p>Tài khoản <i class="right fas fa-angle-left"></i></p>
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
@@ -385,7 +328,7 @@ require_once '../../config.php';
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../account//User_Role.php" class="nav-link">
+                                    <a href="../account/User_Role.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Phân quyền</p>
                                     </a>
@@ -399,7 +342,6 @@ require_once '../../config.php';
             <!-- /.sidebar -->
         </aside>
     </div>
-
 
     <!-- ./wrapper -->
 
@@ -435,8 +377,36 @@ require_once '../../config.php';
     <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.js"></script>
     <!-- AdminLTE for demo purposes -->
     <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
-    <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+    <!-- AdminLTE dashboard demo -->
     <script src="<?php echo BASE_URL ?>/Public/dist/js/pages/dashboard.js"></script>
+    <!-- Dark Mode Toggle -->
+    <script>
+        $(document).ready(function() {
+            const darkModeToggle = $('#darkModeToggle');
+            const body = $('body');
+            const icon = darkModeToggle.find('i');
+
+            // Kiểm tra nếu đã có dark mode trong localStorage
+            if (localStorage.getItem('darkMode') === 'enabled') {
+                body.addClass('dark-mode');
+                icon.removeClass('fa-moon').addClass('fa-sun');
+            }
+
+            // Xử lý sự kiện click vào nút toggle
+            darkModeToggle.on('click', function(e) {
+                e.preventDefault();
+                body.toggleClass('dark-mode');
+
+                if (body.hasClass('dark-mode')) {
+                    localStorage.setItem('darkMode', 'enabled');
+                    icon.removeClass('fa-moon').addClass('fa-sun');
+                } else {
+                    localStorage.setItem('darkMode', 'disabled');
+                    icon.removeClass('fa-sun').addClass('fa-moon');
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
