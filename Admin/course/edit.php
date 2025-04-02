@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <div class="row">
                             <div class="col-md-9">
                                 <div class="form-group">
-                                    <label>Mã Khoa <span class="text-danger"> (*)</span></label>
+                                    <label>Mã học phần <span class="text-danger"> (*)</span></label>
                                     <div class="col">
                                         <input class="form-control" type="text" name="MaHocPhan"
                                             value="<?php if (isset($_POST['MaHocPhan'])) echo $MaHocPhan;
@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Tên Khoa <span class="text-danger"> (*)</span></label>
+                                    <label>Tên học phần <span class="text-danger"> (*)</span></label>
                                     <div class="col">
                                         <input class="form-control" type="text" name="TenHocPhan"
                                             value="<?php if (isset($_POST['TenHocPhan'])) echo $TenHocPhan;
