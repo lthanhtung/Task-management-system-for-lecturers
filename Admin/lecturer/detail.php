@@ -83,7 +83,7 @@ $rows = mysqli_fetch_array($result);
                                     <label>Thời gian gặp sinh viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input readonly class="form-control" type="text" name="ThoiGian"
-                                            value="<?php echo $rows['ThuTiepSinhVien'].' vào lúc: '.$rows['ThoiGianBatDau'].' đến '.$rows['ThoiGianKetThuc'] ; ?>">
+                                            value="<?php echo $rows['ThuTiepSinhVien'].' vào lúc: '.$rows['GioBatDau'].' đến '.$rows['GioKetThuc'] ; ?>">
                                     </div>
                                 </div>
 

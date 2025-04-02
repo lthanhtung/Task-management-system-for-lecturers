@@ -97,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($_POST['thutiep'])) {
         $errors['thutiep'] = 'Vui lòng chọn ngày tiếp sinh viên';
     } else {
+        $thutiep = mysqli_real_escape_string($dbc, $_POST['thutiep']);
         if ($_POST['thutiep'] === '2') {
             $thutiep = 'Thứ Hai';
         } elseif ($_POST['thutiep'] === '3') {
@@ -114,17 +115,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
     //Kiểm tra thời gian bắt đầu
-    if (empty($_POST['thoigian_batdau'])) {
-        $errors['thoigian_batdau'] = 'Thời gian bắt đầu không để trống';
+    if (empty($_POST['gio_batdau'])) {
+        $errors['gio_batdau'] = 'Thời gian bắt đầu không để trống';
     } else {
-        $thoigian_batdau = mysqli_real_escape_string($dbc, trim($_POST['thoigian_batdau']));
+        $gio_batdau = mysqli_real_escape_string($dbc, trim($_POST['gio_batdau']));
     }
 
     //Kiểm tra thời gian kết thúc
-    if (empty($_POST['thoigian_ketthuc'])) {
-        $errors['thoigian_ketthuc'] = 'Thời gian kết thúc không để trống';
+    if (empty($_POST['gio_ketthuc'])) {
+        $errors['gio_ketthuc'] = 'Thời gian kết thúc không để trống';
     } else {
-        $thoigian_ketthuc = mysqli_real_escape_string($dbc, trim($_POST['thoigian_ketthuc']));
+        $gio_ketthuc = mysqli_real_escape_string($dbc, trim($_POST['gio_ketthuc']));
     }
 
     //Kiểm tra Địa điểm tiếp sinh viên
@@ -178,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Make the query:
         $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien,TenGiangVien,NgaySinh,GioiTinh,Email,SoDienThoai,HocVi,ChucDanh,MaKhoa,TrangThai) 
         VALUES ('$MaGiangVien', '$HoGiangVien','$TenGiangVien','$NgaySinh','$GioiTinh','$Email','$SDT','$hocvi','$chucdanh','$Khoa','$trangthai')";
-        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien,ThuTiepSinhVien,ThoiGianBatDau,ThoiGianKetThuc,DiaDiem) VALUES ('$MaGiangVien','$thutiep','$thoigian_batdau','$thoigian_ketthuc','$diadiem')";
+        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien,ThuTiepSinhVien,GioBatDau,GioKetThuc,DiaDiem) VALUES ('$MaGiangVien','$thutiep','$gio_batdau','$gio_ketthuc','$diadiem')";
         $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan,MatKhau,Quyen) VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v','User')";
         $r1 = @mysqli_query($dbc, $queryGiangVien); // Run the query.
         $r2 = @mysqli_query($dbc, $queryLichTiep); // Run the query.
@@ -299,9 +300,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         </div>
                                         <!-- Thời gian bắt đầu -->
                                         <div class="col-md-2">
-                                            <input class="form-control" type="time" name="thoigian_batdau" value="">
-                                            <?php if (isset($errors['thoigian_batdau'])): ?>
-                                                <small class="text-danger"><?php echo $errors['thoigian_batdau']; ?></small>
+                                            <input class="form-control" type="time" name="gio_batdau" value="">
+                                            <?php if (isset($errors['gio_batdau'])): ?>
+                                                <small class="text-danger"><?php echo $errors['gio_batdau']; ?></small>
                                             <?php endif; ?>
                                         </div>
                                         
@@ -311,9 +312,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
                                         <!-- Thời gian kết thúc -->
                                         <div class="col-md-2">
-                                            <input class="form-control" type="time" name="thoigian_ketthuc" value="">
-                                            <?php if (isset($errors['thoigian_ketthuc'])): ?>
-                                                <small class="text-danger"><?php echo $errors['thoigian_ketthuc']; ?></small>
+                                            <input class="form-control" type="time" name="gio_ketthuc" value="">
+                                            <?php if (isset($errors['gio_ketthuc'])): ?>
+                                                <small class="text-danger"><?php echo $errors['gio_ketthuc']; ?></small>
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -369,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Giới tính <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <select class="form-control" name="Gioitinh">
+                                        <select class="form-control" name="GioiTinh">
                                             <option value="nam" selected>Nam</option>
                                             <option value="nu">Nữ</option>
                                         </select>

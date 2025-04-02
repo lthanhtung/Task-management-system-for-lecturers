@@ -26,9 +26,9 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     if ($stmt->execute()) {
         // Cập nhật thành công
         if ($status == 0) {
-            $_SESSION['message'] = "Đã chuyển vào thùng rác!";
+            $_SESSION['success_message'] = "Đã chuyển vào thùng rác!";
         } else {
-            $_SESSION['message'] = "Cập nhật trạng thái thành công!";
+            $_SESSION['success_message'] = "Cập nhật trạng thái thành công!";
         }
         header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
         ob_end_flush();
@@ -101,10 +101,9 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                                 echo "<tr>";
                                                 echo "<td>{$row['HoGiangVien']}</td>";
                                                 echo "<td>{$row['TenGiangVien']}</td>";
+                                                echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>{$row['HocVi']}</td>";
                                                 echo "<td>{$row['ChucDanh']}</td>";
-                                                echo "<td>{$row['TenKhoa']}</td>"; // Nếu bạn cũng muốn hiển thị tên khoa
-
                                                 echo "<td>";
                                                 echo "<a href='detail.php?MaGiangVien={$row['MaGiangVien']}' class='btn-sm btn-blue'> Xem thông tin </a>&nbsp;&nbsp;";
                                                 echo "</td>";
