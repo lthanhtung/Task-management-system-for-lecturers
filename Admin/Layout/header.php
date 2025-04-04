@@ -201,18 +201,6 @@ require_once '../../config.php';
                                         <p>Thêm công việc</p>
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Vai trò công việc</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="#" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh mục loại công việc</p>
-                                    </a>
-                                </li>
                             </ul>
                         </li>
 
@@ -255,6 +243,34 @@ require_once '../../config.php';
                                     <a href="../lecturer/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm giảng viên</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="../lecturer//faculty-achievements/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Thành tựu giảng viên</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
+                        <!-- Menu Học phần -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fa-solid fa-graduation-cap"></i>
+                                <p>Hướng dẫn sinh viên <i class="right fas fa-angle-left"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="../student-support/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Danh sách sinh viên</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="../student-support/progress-report.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Báo cáo tiến độ</p>
                                     </a>
                                 </li>
                             </ul>
@@ -331,6 +347,28 @@ require_once '../../config.php';
                                 </li>
                             </ul>
                         </li>
+
+                        <!--Phàn còn lại của menu-->
+                        <li class="nav-header">LABELS</li>
+                        <li class="nav-item">
+                            <a href="../employee-report/index.php" class="nav-link">
+                                <i class="nav-icon far fa-circle text-info"></i>
+                                <p>Hồ sơ đánh giá viên chức</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="../teaching-resources/index.php" class="nav-link">
+                                <i class="nav-icon far fa-circle text-info"></i>
+                                <p class="text">Tài liệu giảng dạy</p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="../scientific-research/index.php" class="nav-link">
+                                <i class="nav-icon far fa-circle text-info"></i>
+                                <p class="text">Nguyên cứu khoa học</p>
+                            </a>
+                        </li>
+
                     </ul>
                 </nav>
                 <!-- /.sidebar-menu -->
@@ -375,7 +413,7 @@ require_once '../../config.php';
     <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
     <!-- AdminLTE dashboard demo -->
     <script src="<?php echo BASE_URL ?>/Public/dist/js/pages/dashboard.js"></script>
-    
+
     <!-- Dark Mode -->
     <script>
         $(document).ready(function() {
