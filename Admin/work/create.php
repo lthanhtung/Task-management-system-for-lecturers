@@ -54,6 +54,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
         $errors['TimeStart'] = 'Vui lòng chọn giờ bắt đầu';
     }
 
+    // Kiểm tra trùng lặp giảng viên trong danh sách được gửi
+    if (!empty($_POST['tengiangvien'])) {
+        $lecturerIds = $_POST['tengiangvien'];
+        $lecturerCount = array_count_values($lecturerIds); // Đếm số lần xuất hiện của mỗi MaGiangVien
+        $duplicateLecturers = [];
+
+        // Tìm các giảng viên bị trùng
+        foreach ($lecturerCount as $maGiangVien => $count) {
+            if ($count > 1 && !empty($maGiangVien)) { // Chỉ kiểm tra nếu trùng và không phải rỗng
+                foreach ($giangVienList as $gv) {
+                    if ($gv['MaGiangVien'] == $maGiangVien) {
+                        $duplicateLecturers[] = $gv['HoGiangVien'] . ' ' . $gv['TenGiangVien'];
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Nếu có giảng viên trùng, thêm thông báo lỗi với tên giảng viên
+        if (!empty($duplicateLecturers)) {
+            $errors['tengiangvien'] = 'Các giảng viên bị trùng lặp: ' . implode(', ', $duplicateLecturers);
+        }
+    }
+
     if (empty($errors)) {
         $maCV = mysqli_real_escape_string($dbc, $_POST['MaCongViecHanhChinh']);
         $tenCV = mysqli_real_escape_string($dbc, $_POST['tencongviec']);
@@ -335,6 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                 $.post('', formData, function(data) {
                     var $newContent = $(data);
                     var $lecturerSelect = $newContent.find('#scheduleContainer select').first().clone();
+                    $lecturerSelect.val(''); // Đặt giá trị mặc định là "Chọn giảng viên"
                     var newRow = `
                         <div class="row mb-2">
                             <div class="col-md-2">

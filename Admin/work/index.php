@@ -30,6 +30,28 @@ if (isset($_GET['id']) && isset($_GET['status']) && $_GET['status'] == 0) {
         // Commit transaction nếu không có lỗi
         mysqli_commit($dbc);
 
+        // Kiểm tra số lượng bản ghi còn lại trong bảng congviechanhchinh
+        $checkMainQuery = "SELECT COUNT(*) as total FROM congviechanhchinh";
+        $checkMainResult = mysqli_query($dbc, $checkMainQuery);
+        $mainRowCount = mysqli_fetch_assoc($checkMainResult)['total'];
+
+        // Nếu bảng congviechanhchinh rỗng, đặt lại AUTO_INCREMENT
+        if ($mainRowCount == 0) {
+            $resetMainQuery = "ALTER TABLE congviechanhchinh AUTO_INCREMENT = 1";
+            mysqli_query($dbc, $resetMainQuery);
+        }
+
+        // Kiểm tra số lượng bản ghi còn lại trong bảng thongtincongviechanhchinh
+        $checkDetailQuery = "SELECT COUNT(*) as total FROM thongtincongviechanhchinh";
+        $checkDetailResult = mysqli_query($dbc, $checkDetailQuery);
+        $detailRowCount = mysqli_fetch_assoc($checkDetailResult)['total'];
+
+        // Nếu bảng thongtincongviechanhchinh rỗng, đặt lại AUTO_INCREMENT
+        if ($detailRowCount == 0) {
+            $resetDetailQuery = "ALTER TABLE thongtincongviechanhchinh AUTO_INCREMENT = 1";
+            mysqli_query($dbc, $resetDetailQuery);
+        }
+
         // Lưu thông báo thành công vào session
         $_SESSION['success_message'] = "Xóa công việc thành công!";
         header("Location: index.php"); // Chuyển hướng sau khi xóa
@@ -42,12 +64,10 @@ if (isset($_GET['id']) && isset($_GET['status']) && $_GET['status'] == 0) {
     }
 }
 
-// Lấy dữ liệu từ hai bảng bằng cách join
+// Truy vấn dữ liệu thô từ các bảng
 $sql = "SELECT 
             cvc.MaCongViecHanhChinh,
             cvc.TenCongViec,
-            ttcvc.MaThongTinCongViec,
-            ttcvc.MaGiangVien,
             gv.HoGiangVien,
             gv.TenGiangVien,
             ttcvc.LoaiCongViec,
@@ -58,6 +78,32 @@ $sql = "SELECT
         LEFT JOIN thongtincongviechanhchinh ttcvc ON cvc.MaCongViecHanhChinh = ttcvc.MaCongViecHanhChinh
         LEFT JOIN giangvien gv ON ttcvc.MaGiangVien = gv.MaGiangVien";
 $result = mysqli_query($dbc, $sql);
+
+// Xử lý dữ liệu: Nhóm giảng viên theo MaCongViecHanhChinh
+$groupedData = [];
+if (mysqli_num_rows($result) > 0) {
+    while ($row = mysqli_fetch_assoc($result)) {
+        $maCongViec = $row['MaCongViecHanhChinh'];
+
+        // Nếu mã công việc chưa tồn tại trong mảng, khởi tạo nó
+        if (!isset($groupedData[$maCongViec])) {
+            $groupedData[$maCongViec] = [
+                'MaCongViecHanhChinh' => $row['MaCongViecHanhChinh'],
+                'TenCongViec' => $row['TenCongViec'],
+                'GiangVien' => [],
+                'LoaiCongViec' => $row['LoaiCongViec'],
+                'NgayThucHien' => $row['NgayThucHien'],
+                'GioBatDau' => $row['GioBatDau'],
+                'DiaDiem' => $row['DiaDiem']
+            ];
+        }
+
+        // Thêm giảng viên vào danh sách (nếu có)
+        if (!empty($row['HoGiangVien']) && !empty($row['TenGiangVien'])) {
+            $groupedData[$maCongViec]['GiangVien'][] = $row['HoGiangVien'] . ' ' . $row['TenGiangVien'];
+        }
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -72,6 +118,27 @@ $result = mysqli_query($dbc, $sql);
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+    <style>
+        /* Định dạng nút X */
+        .alert-success {
+            position: relative;
+            padding-right: 40px; /* Tạo khoảng trống cho nút X */
+        }
+        .close-btn {
+            position: absolute;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: #155724; /* Màu phù hợp với alert-success */
+        }
+        .close-btn:hover {
+            color: #0c3c1e; /* Màu khi hover */
+        }
+    </style>
 </head>
 
 <body>
@@ -82,7 +149,8 @@ $result = mysqli_query($dbc, $sql);
                 <!-- Hiển thị thông báo thành công -->
                 <?php
                 if (isset($_SESSION['success_message'])) {
-                    echo '<div id="success-message" class="alert alert-success">' . htmlspecialchars($_SESSION['success_message']) . '</div>';                    unset($_SESSION['success_message']); // Xóa thông báo sau khi hiển thị
+                    echo '<div id="success-message" class="alert alert-success">' . htmlspecialchars($_SESSION['success_message']) . '<button class="close-btn">×</button></div>';
+                    unset($_SESSION['success_message']); // Xóa thông báo sau khi hiển thị
                 }
                 ?>
 
@@ -106,7 +174,7 @@ $result = mysqli_query($dbc, $sql);
                                             <th>Mã Công Việc</th>
                                             <th>Tên Công Việc</th>
                                             <th>Giảng Viên</th>
-                                            <th>Loại Công Việc</th>
+                                            <th>Loai Công Việc</th>
                                             <th>Ngày Thực Hiện</th>
                                             <th>Giờ Bắt Đầu</th>
                                             <th>Địa Điểm</th>
@@ -115,18 +183,32 @@ $result = mysqli_query($dbc, $sql);
                                     </thead>
                                     <tbody>
                                         <?php
-                                        if (mysqli_num_rows($result) > 0) {
-                                            while ($row = mysqli_fetch_assoc($result)) {
+                                        if (!empty($groupedData)) {
+                                            foreach ($groupedData as $data) {
                                                 echo "<tr>";
-                                                echo "<td>" . htmlspecialchars($row['MaCongViecHanhChinh']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['TenCongViec']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['HoGiangVien'] . " " . $row['TenGiangVien']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['LoaiCongViec']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['NgayThucHien']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['GioBatDau']) . "</td>";
-                                                echo "<td>" . htmlspecialchars($row['DiaDiem']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($data['MaCongViecHanhChinh']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($data['TenCongViec']) . "</td>";
+                                                // Hiển thị danh sách giảng viên (nếu có)
                                                 echo "<td>";
-                                                echo "<a href='#' class='btn-sm btn-danger delete-btn' data-id='{$row['MaCongViecHanhChinh']}'> <i class='fa fa-trash'></i> Xóa </a>";
+                                                if (!empty($data['GiangVien'])) {
+                                                    foreach ($data['GiangVien'] as $index => $giangVien) {
+                                                        echo htmlspecialchars($giangVien);
+                                                        // Nếu không phải là giảng viên cuối cùng, thêm thẻ <br>
+                                                        if ($index < count($data['GiangVien']) - 1) {
+                                                            echo "<br>";
+                                                        }
+                                                    }
+                                                } else {
+                                                    echo "Không có giảng viên";
+                                                }
+                                                echo "</td>";
+                                                echo "<td>" . htmlspecialchars($data['LoaiCongViec']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($data['NgayThucHien']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($data['GioBatDau']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($data['DiaDiem']) . "</td>";
+                                                echo "<td>";
+                                                echo "<a href='#' class='btn-sm btn-danger delete-btn' data-id='{$data['MaCongViecHanhChinh']}'> <i class='fa fa-trash'></i> Xóa </a>   ";
+                                                echo "<a href='edit.php?id={$data['MaCongViecHanhChinh']}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Chỉnh sửa </a>";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
@@ -167,7 +249,8 @@ $result = mysqli_query($dbc, $sql);
     <script src="<?php echo BASE_URL ?>/dist/js/demo.js"></script>
     <!-- Page specific script -->
     <script>
-        $(function() {
+        $(document).ready(function() {
+            // Khởi tạo DataTable
             $("#example1").DataTable({
                 "responsive": true,
                 "lengthChange": false,
@@ -183,14 +266,24 @@ $result = mysqli_query($dbc, $sql);
                 }
             });
 
-            // Hiển thị và ẩn thông báo thành công
-            var successMessage = $('#success-message');
-            if (successMessage.length) {
-                successMessage.show(); // Hiển thị thông báo
-                setTimeout(function() {
-                    successMessage.hide(); // Ẩn sau 3 giây
-                }, 3000);
-            }
+            // Sử dụng setInterval để kiểm tra thông báo và tự động ẩn sau 3 giây
+            var interval = setInterval(function() {
+                var successMessage = $('#success-message');
+                if (successMessage.length) {
+                    console.log("Thông báo được phát hiện:", successMessage.text()); // Debug
+                    successMessage.show(); // Đảm bảo thông báo hiển thị
+                    setTimeout(function() {
+                        successMessage.fadeOut('slow'); // Ẩn thông báo sau 3 giây
+                    }, 3000);
+                    clearInterval(interval); // Dừng kiểm tra khi tìm thấy
+                }
+            }, 100); // Kiểm tra mỗi 100ms
+
+            // Xử lý nút X để đóng thông báo ngay lập tức
+            $(document).on('click', '.close-btn', function() {
+                $(this).closest('#success-message').fadeOut('slow'); // Ẩn thông báo khi nhấp vào nút X
+                clearInterval(interval); // Dừng kiểm tra tự động ẩn
+            });
         });
     </script>
 </body>
