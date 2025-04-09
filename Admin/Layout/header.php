@@ -254,6 +254,28 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
+                        <!-- Menu Đánh Giá Viên Chức -->
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <i class="fa-solid fa-folder"></i>
+                                <p>Hồ sơ đánh giá viên chức <i class="right fas fa-angle-left"></i></p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="../employee-report/index.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Danh sách hồ sơ</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="../employee-report/employee-evaluation.php" class="nav-link">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Đánh giá viên chức</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <!-- Menu Học phần -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
@@ -350,21 +372,16 @@ require_once '../../config.php';
 
                         <!--Phàn còn lại của menu-->
                         <li class="nav-header">LABELS</li>
-                        <li class="nav-item">
-                            <a href="../employee-report/index.php" class="nav-link">
-                                <i class="nav-icon far fa-circle text-info"></i>
-                                <p>Hồ sơ đánh giá viên chức</p>
-                            </a>
-                        </li>
+
                         <li class="nav-item">
                             <a href="../teaching-resources/index.php" class="nav-link">
-                                <i class="nav-icon far fa-circle text-info"></i>
+                                <i class="fa-solid fa-file"></i>
                                 <p class="text">Tài liệu giảng dạy</p>
                             </a>
                         </li>
                         <li class="nav-item">
                             <a href="../scientific-research/index.php" class="nav-link">
-                                <i class="nav-icon far fa-circle text-info"></i>
+                                <i class="fa-solid fa-microscope"></i>
                                 <p class="text">Nguyên cứu khoa học</p>
                             </a>
                         </li>
