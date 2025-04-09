@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $errors['MaGiangVien'] = 'Mã giảng viên không để trống!';
     } else {
         $MaGiangVien = mysqli_real_escape_string($dbc, trim($_POST['MaGiangVien']));
+        $MaHoSo = $MaGiangVien; // Gán MaHoSo bằng MaGiangVien
         $sql = "SELECT * FROM giangvien WHERE MaGiangVien = '$MaGiangVien'";
         $result = mysqli_query($dbc, $sql);
 
@@ -229,8 +230,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Nếu không có lỗi thì insert dữ liệu
     if (empty($errors)) {
-        $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien, TenGiangVien, NgaySinh, GioiTinh, Email, SoDienThoai, HocVi, ChucDanh, MaKhoa, TrangThai, AnhDaiDien) 
-        VALUES ('$MaGiangVien', '$HoGiangVien', '$TenGiangVien', '$NgaySinh', '$GioiTinh', '$Email', '$SDT', '$hocvi', '$chucdanh', '$Khoa', '$trangthai', '$anhdaidien')";
+        
+        $queryHoSoDanhGia = "INSERT INTO hosodanhgiavienchuc (MaHoSo) 
+        VALUES ('$MaHoSo')";
+
+        $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien, TenGiangVien, NgaySinh, GioiTinh, Email, SoDienThoai, HocVi, ChucDanh, MaKhoa, TrangThai, AnhDaiDien, MaHoSo) 
+        VALUES ('$MaGiangVien', '$HoGiangVien', '$TenGiangVien', '$NgaySinh', '$GioiTinh', '$Email', '$SDT', '$hocvi', '$chucdanh', '$Khoa', '$trangthai', '$anhdaidien', '$MaHoSo')";
 
         $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien, ThuTiepSinhVien, GioBatDau, GioKetThuc, DiaDiem) 
         VALUES ('$MaGiangVien', '$thutiep', '$gio_batdau', '$gio_ketthuc', '$diadiem')";
@@ -238,12 +243,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan, MatKhau, Quyen) 
         VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v', 'User')";
 
-        $r1 = @mysqli_query($dbc, $queryGiangVien);
-        $r2 = @mysqli_query($dbc, $queryLichTiep);
-        $r3 = @mysqli_query($dbc, $queryTaiKhoanGiangVien);
+        
+
+        $r1 = @mysqli_query($dbc, $queryHoSoDanhGia);
+        $r2 = @mysqli_query($dbc, $queryGiangVien);
+        $r3 = @mysqli_query($dbc, $queryLichTiep);
+        $r4 = @mysqli_query($dbc, $queryTaiKhoanGiangVien);
 
         session_start();
-        if ($r1 && $r2 && $r3) {
+        if ($r1 && $r2 && $r3 && $r4) {
             $_SESSION['success_message'] = 'Đã thêm giảng viên thành công!';
             header("Location: index.php");
             ob_end_flush();
