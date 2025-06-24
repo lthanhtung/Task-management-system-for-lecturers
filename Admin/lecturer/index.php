@@ -1,44 +1,91 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
-require_once '../Layout/header.php'
-?>
+require_once '../Layout/header.php';
 
-<?php
-require BASE_PATH . './Database/connect-database.php';
+// Kiểm tra quyền và lấy MaKhoa của Admin
+$user_id = $_SESSION['user_id'];
+$quyen = $_SESSION['quyen'] ?? 'Không xác định';
+$ma_khoa = null;
+
+if ($quyen === 'Admin') {
+    // Lấy MaKhoa của Admin từ bảng giangvien
+    $query_khoa = "SELECT MaKhoa FROM giangvien WHERE MaGiangVien = ?";
+    $stmt_khoa = $dbc->prepare($query_khoa);
+    $stmt_khoa->bind_param("s", $user_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+
+    if ($row_khoa = $result_khoa->fetch_assoc()) {
+        $ma_khoa = $row_khoa['MaKhoa'];
+    }
+    $stmt_khoa->close();
+}
+
+// Xây dựng câu query để lấy thông tin giảng viên và quyền từ bảng taikhoan
 $query = "
-SELECT giangvien.*, khoa.TenKhoa
-FROM giangvien
-JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa 
-WHERE giangvien.TrangThai IN (1, 2)";
-$result = $dbc->query($query);
+    SELECT giangvien.*, khoa.TenKhoa, taikhoan.Quyen
+    FROM giangvien
+    JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa
+    JOIN taikhoan ON giangvien.MaGiangVien = taikhoan.MaTaiKhoan
+    WHERE giangvien.TrangThai IN (1, 2)";
+
+if ($quyen === 'Admin' && $ma_khoa !== null) {
+    // Nếu là Admin, thêm điều kiện lọc theo MaKhoa
+    $query .= " AND giangvien.MaKhoa = ?";
+    $stmt = $dbc->prepare($query);
+    $stmt->bind_param("s", $ma_khoa);
+} else {
+    // Nếu không phải Admin, lấy tất cả giảng viên
+    $stmt = $dbc->prepare($query);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
 
 // Xử lý Chuyển trạng Thái
-// Kiểm tra nếu có yêu cầu cập nhật trạng thái
 if (isset($_GET['id']) && isset($_GET['status'])) {
     $id = $_GET['id'];
     $status = $_GET['status'];
 
-    // Cập nhật trạng thái trong cơ sở dữ liệu
-    $stmt = $dbc->prepare("UPDATE giangvien SET TrangThai = ? WHERE  MaGiangVien= ?");
-    $stmt->bind_param("is", $status, $id); // 'i' cho integer, 's' cho string
+    // Kiểm tra vai trò của giảng viên nếu người dùng là Admin
+    if ($quyen === 'Admin') {
+        $query_check_role = "SELECT Quyen FROM taikhoan WHERE MaTaiKhoan = ?";
+        $stmt_check_role = $dbc->prepare($query_check_role);
+        $stmt_check_role->bind_param("s", $id);
+        $stmt_check_role->execute();
+        $result_check_role = $stmt_check_role->get_result();
+        if ($row_check_role = $result_check_role->fetch_assoc()) {
+            if ($row_check_role['Quyen'] === 'Super Admin') {
+                $_SESSION['error_message'] = "Bạn không có quyền thực hiện hành động này đối với giảng viên Super Admin!";
+                header("Location: " . $_SERVER['PHP_SELF']);
+                ob_end_flush();
+                exit();
+            }
+        }
+        $stmt_check_role->close();
+    }
 
-    if ($stmt->execute()) {
+    // Cập nhật trạng thái trong cơ sở dữ liệu
+    $stmt_update = $dbc->prepare("UPDATE giangvien SET TrangThai = ? WHERE MaGiangVien = ?");
+    $stmt_update->bind_param("is", $status, $id);
+
+    if ($stmt_update->execute()) {
         // Cập nhật thành công
         if ($status == 0) {
             $_SESSION['success_message'] = "Đã chuyển vào thùng rác!";
         } else {
             $_SESSION['success_message'] = "Cập nhật trạng thái thành công!";
         }
-        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
+        header("Location: " . $_SERVER['PHP_SELF']);
         ob_end_flush();
         exit();
     } else {
-        // Xử lý lỗi nếu cập nhật không thành công
-        echo "Lỗi khi cập nhật: " . $stmt->error;
+        echo "Lỗi khi cập nhật: " . $stmt_update->error;
     }
+    $stmt_update->close();
 }
 
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -66,9 +113,13 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                     <div class="col-12">
                         <div class="card">
                             <?php
+                            if (isset($_SESSION['error_message'])) {
+                                echo '<div id="error-message" class="alert alert-danger">' . $_SESSION['error_message'] . '</div>';
+                                unset($_SESSION['error_message']);
+                            }
                             if (isset($_SESSION['success_message'])) {
                                 echo '<div id="success-message" class="alert alert-success">' . $_SESSION['success_message'] . '</div>';
-                                unset($_SESSION['success_message']); // Xóa thông báo sau khi hiển thị
+                                unset($_SESSION['success_message']);
                             }
                             ?>
                             <div class="card-header">
@@ -77,7 +128,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                         <strong class="text-blue">DANH SÁCH GIẢNG VIÊN</strong>
                                     </div>
                                     <div class="col-md-6 text-right">
-                                        <a href="./trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i>Thùng rác</a>
+                                        <a href="./trash.php" class="btn-sm btn-danger"> <i class="fa fa-trash"></i> Thùng rác</a>
                                     </div>
                                 </div>
                             </div>
@@ -97,45 +148,41 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                     </thead>
                                     <tbody>
                                         <?php
-                                        if (mysqli_num_rows($result) > 0) {
-                                            while ($row = mysqli_fetch_array($result)) {
+                                        if ($result->num_rows > 0) {
+                                            while ($row = $result->fetch_assoc()) {
                                                 echo "<tr>";
                                                 echo "<td style='text-align: center; vertical-align: middle;'>
-                                                <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
-                                                </td>";                                                
+                                                        <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
+                                                      </td>";
                                                 echo "<td> {$row['HoGiangVien']} {$row['TenGiangVien']}</td>";
                                                 echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>{$row['HocVi']}</td>";
                                                 echo "<td>{$row['ChucDanh']}</td>";
                                                 echo "<td>";
-                                                echo "<a href='detail.php?MaGiangVien={$row['MaGiangVien']}' class='btn-sm btn-blue'> Xem thông tin </a>&nbsp;&nbsp;";
+                                                echo "<a href='detail.php?MaGiangVien={$row['MaGiangVien']}' class='btn-sm btn-blue'> Xem thông tin </a> ";
                                                 echo "</td>";
-
                                                 echo "<td>";
-                                                // Chuyển trạng thái
-                                                if ($row['TrangThai'] == 1) {
-                                                    // Nếu trạng thái là 1, hiển thị nút "Bật"
-                                                    echo "<a href='?id={$row['MaGiangVien']}&status=2' class='btn-sm btn-success'><i class='fa fa-toggle-on'></i></a>&nbsp;&nbsp;";
-                                                } else {
-                                                    // Nếu trạng thái không phải là 1, hiển thị nút "Tắt"
-                                                    echo "<a href='?id={$row['MaGiangVien']}&status=1' class='btn-sm btn-danger'><i class='fa fa-toggle-off'></i></a>&nbsp;&nbsp;";
+                                                // Chỉ hiển thị các nút Chuyển trạng thái, Cập nhật, Xóa nếu là Super Admin hoặc (là Admin và giảng viên không phải Super Admin)
+                                                if ($quyen === 'Super Admin' || ($quyen === 'Admin' && $row['Quyen'] !== 'Super Admin')) {
+                                                    if ($row['TrangThai'] == 1) {
+                                                        echo "<a href='?id={$row['MaGiangVien']}&status=2' class='btn-sm btn-success'><i class='fa fa-toggle-on'></i></a> ";
+                                                    } else {
+                                                        echo "<a href='?id={$row['MaGiangVien']}&status=1' class='btn-sm btn-danger'><i class='fa fa-toggle-off'></i></a> ";
+                                                    }
+                                                    echo "<a href='edit.php?MaGiangVien={$row['MaGiangVien']}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Cập nhật </a> ";
+                                                    echo "<a href='?id={$row['MaGiangVien']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
                                                 }
-
-                                                echo "<a href='edit.php?MaGiangVien={$row['MaGiangVien']}' class='btn-sm btn-info'> <i class='fa fa-edit'></i> Cập nhập </a>&nbsp;&nbsp;";
-                                                echo "<a href='?id={$row['MaGiangVien']}&status=0' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
                                         }
                                         ?>
                                     </tbody>
-
                                 </table>
                             </div>
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
-                        <!-- /.col -->
                     </div>
                     <!-- /.row -->
                 </div>
@@ -148,7 +195,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
     <!-- Bootstrap 4 -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- DataTables  & Plugins -->
+    <!-- DataTables & Plugins -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables/jquery.dataTables.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
@@ -162,9 +209,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
     <!-- AdminLTE App -->
-    <script src="<?php echo BASE_URL ?>/dist/js/adminlte.min.js"></script>
-    <!-- AdminLTE for demo purposes -->
-    <script src="<?php echo BASE_URL ?>/dist/js/demo.js"></script>
+    <!-- <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script> -->
     <!-- Page specific script -->
     <script>
         $(function() {
@@ -184,11 +229,10 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
             });
         });
     </script>
-
 </body>
 
 </html>
 
 <?php
-require_once '../Layout/footer.php'
+require_once '../Layout/footer.php';
 ?>

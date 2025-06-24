@@ -1,11 +1,10 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
-require_once '../Layout/header.php'
+require_once '../Layout/header.php';
+require_once BASE_PATH . '/Database/connect-database.php'; // Đảm bảo kết nối cơ sở dữ liệu
 ?>
 
 <?php
-require BASE_PATH . './Database/connect-database.php';
 $query = "SELECT * FROM taikhoan";
 $result = $dbc->query($query);
 
@@ -13,10 +12,11 @@ $result = $dbc->query($query);
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
     $new_password = '1fFZ8o*J&zTp2L9v'; // Mật khẩu mới
+    $hashed_password = password_hash($new_password, PASSWORD_DEFAULT); // Mã hóa mật khẩu
 
-    // Cập nhật mật khẩu trong cơ sở dữ liệu
+    // Cập nhật mật khẩu đã mã hóa trong cơ sở dữ liệu
     $stmt = $dbc->prepare("UPDATE taikhoan SET MatKhau = ? WHERE MaTaiKhoan = ?");
-    $stmt->bind_param("ss", $new_password, $id); // 's' cho string
+    $stmt->bind_param("ss", $hashed_password, $id); // 's' cho string
 
     if ($stmt->execute()) {
         // Cập nhật thành công
@@ -28,8 +28,8 @@ if (isset($_GET['id'])) {
         // Xử lý lỗi nếu cập nhật không thành công
         echo "Lỗi khi cập nhật: " . $stmt->error;
     }
+    $stmt->close();
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -95,20 +95,18 @@ if (isset($_GET['id'])) {
                                                 </td>";
                                                 echo "<td>{$row['Quyen']}</td>";
                                                 echo "<td>";
-                                                echo "<a href='?id={$row['MaTaiKhoan']}' class='btn-sm btn-info'> <i class='fa fa-undo'></i>Reset password</a>&nbsp;&nbsp;";
+                                                echo "<a href='?id={$row['MaTaiKhoan']}' class='btn-sm btn-info'> <i class='fa fa-undo'></i>Reset password</a> ";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
                                         }
                                         ?>
                                     </tbody>
-
                                 </table>
                             </div>
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
-                        <!-- /.col -->
                     </div>
                     <!-- /.row -->
                 </div>
@@ -196,5 +194,5 @@ if (isset($_GET['id'])) {
 </html>
 
 <?php
-require_once '../Layout/footer.php'
+require_once '../Layout/footer.php';
 ?>

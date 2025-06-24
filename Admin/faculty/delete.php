@@ -1,8 +1,6 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php';
-require BASE_PATH . './Database/connect-database.php';
 
 // Truy vấn chỉ lấy các bản ghi có trạng thái == 0
 $query = "SELECT * FROM khoa WHERE TrangThai = 0";
@@ -35,7 +33,7 @@ if (isset($_GET['id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách khoa</title>
+    <title>Xóa khoa</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
@@ -105,7 +103,7 @@ if (isset($_GET['id'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
+    <!-- <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script> -->
     <script>
         $(function() {
             $("#example1").DataTable({

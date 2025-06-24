@@ -1,7 +1,7 @@
 <?php
 ob_start();
 require_once '../Layout/header.php';
-require_once BASE_PATH . './Database/connect-database.php';
+require_once BASE_PATH . '/Database/connect-database.php';
 
 // Lấy danh sách khoa
 $khoa_sql = "SELECT * FROM khoa WHERE TrangThai = 1";
@@ -75,9 +75,45 @@ if (isset($_POST['create'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cập nhật quyền</title>
+    <title>Phân quyền</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+    <!-- Thêm CSS của Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* Tùy chỉnh Select2 để không tràn container */
+        .select2-container {
+            max-width: 100%; /* Ngăn dropdown vượt quá container */
+            box-sizing: border-box; /* Đảm bảo padding và border không làm tràn */
+        }
+
+        .select2-container .select2-selection--single {
+            height: 38px; /* Chiều cao đồng bộ với các input khác */
+            line-height: 38px; /* Căn giữa nội dung */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+
+        /* Cắt ngắn nội dung dài trong dropdown để tránh tràn */
+        .select2-selection__rendered {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Bù padding của container để dropdown hiển thị đúng */
+        .select2-container-parent {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -103,33 +139,37 @@ if (isset($_POST['create'])) {
                             <div class="col-md-9">
                                 <div class="form-group">
                                     <label>Khoa <span class="text-danger">(*)</span></label>
-                                    <select class="form-control" name="MaKhoa" id="MaKhoa">
-                                        <option value="">-- Chọn khoa --</option>
-                                        <?php foreach ($khoa_options as $maKhoa => $tenKhoa): ?>
-                                            <option value="<?php echo $maKhoa; ?>"
-                                                <?php echo $maKhoa == $selected_ma_khoa ? 'selected' : ''; ?>>
-                                                <?php echo $tenKhoa; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <div class="select2-container-parent">
+                                        <select class="form-control select2-khoa" name="MaKhoa" id="MaKhoa">
+                                            <option value="">-- Chọn khoa --</option>
+                                            <?php foreach ($khoa_options as $maKhoa => $tenKhoa): ?>
+                                                <option value="<?php echo htmlspecialchars($maKhoa); ?>"
+                                                    <?php echo $maKhoa == $selected_ma_khoa ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($tenKhoa); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                     <?php if (isset($errors['MaKhoa'])): ?>
-                                        <small class="text-danger"><?php echo $errors['MaKhoa']; ?></small>
+                                        <small class="text-danger"><?php echo htmlspecialchars($errors['MaKhoa']); ?></small>
                                     <?php endif; ?>
                                 </div>
 
                                 <div class="form-group">
                                     <label>Họ tên giảng viên <span class="text-danger">(*)</span></label>
-                                    <select class="form-control" name="MaGiangVien" id="MaGiangVien">
-                                        <option value="">-- Chọn giảng viên --</option>
-                                        <?php foreach ($giangvien_options as $maGiangVien => $tenGiangVien): ?>
-                                            <option value="<?php echo $maGiangVien; ?>"
-                                                <?php echo $maGiangVien == $selected_ma_giangvien ? 'selected' : ''; ?>>
-                                                <?php echo $tenGiangVien; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
+                                    <div class="select2-container-parent">
+                                        <select class="form-control select2-giangvien" name="MaGiangVien" id="MaGiangVien">
+                                            <option value="">-- Chọn giảng viên --</option>
+                                            <?php foreach ($giangvien_options as $maGiangVien => $tenGiangVien): ?>
+                                                <option value="<?php echo htmlspecialchars($maGiangVien); ?>"
+                                                    <?php echo $maGiangVien == $selected_ma_giangvien ? 'selected' : ''; ?>>
+                                                    <?php echo htmlspecialchars($tenGiangVien); ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
                                     <?php if (isset($errors['MaGiangVien'])): ?>
-                                        <small class="text-danger"><?php echo $errors['MaGiangVien']; ?></small>
+                                        <small class="text-danger"><?php echo htmlspecialchars($errors['MaGiangVien']); ?></small>
                                     <?php endif; ?>
                                 </div>
 
@@ -139,9 +179,10 @@ if (isset($_POST['create'])) {
                                         <option value="">-- Chọn quyền --</option>
                                         <option value="User" <?php echo $selected_quyen == 'User' ? 'selected' : ''; ?>>User</option>
                                         <option value="Admin" <?php echo $selected_quyen == 'Admin' ? 'selected' : ''; ?>>Admin</option>
+                                        <option value="Super Admin" <?php echo $selected_quyen == 'Super Admin' ? 'selected' : ''; ?>>SuperAdmin</option>
                                     </select>
                                     <?php if (isset($errors['Quyen'])): ?>
-                                        <small class="text-danger"><?php echo $errors['Quyen']; ?></small>
+                                        <small class="text-danger"><?php echo htmlspecialchars($errors['Quyen']); ?></small>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -155,24 +196,78 @@ if (isset($_POST['create'])) {
         </section>
     </div>
 
-    <!-- Scripts -->
+    <!-- jQuery -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
+    <!-- Bootstrap 4 -->
     <script src="<?php echo BASE_URL ?>/Public/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
+    <!-- DataTables & Plugins -->
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/jszip/jszip.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <!-- AdminLTE App -->
+    <!-- AdminLTE for demo purposes -->
+    <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
+    <!-- Thêm JS của Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <!-- Page specific script -->
     <script>
         $(document).ready(function() {
+            // Khởi tạo Select2 cho dropdown Khoa
+            $('#MaKhoa').select2({
+                placeholder: "-- Chọn khoa --",
+                allowClear: false,
+                width: 'resolve', // Tự động điều chỉnh chiều rộng
+                language: {
+                    noResults: function() {
+                        return "Không có dữ liệu";
+                    }
+                }
+            });
+
+            // Khởi tạo Select2 cho dropdown Giảng viên
+            $('#MaGiangVien').select2({
+                placeholder: "-- Chọn giảng viên --",
+                allowClear: false,
+                width: 'resolve', // Tự động điều chỉnh chiều rộng
+                language: {
+                    noResults: function() {
+                        return "Không có dữ liệu";
+                    }
+                }
+            });
+
             // Khi chọn khoa
             $('#MaKhoa').on('change', function(e) {
                 e.preventDefault();
                 var formData = $('#updateForm').serialize();
                 // Reset cả giảng viên và quyền ngay lập tức
-                $('#MaGiangVien').empty().append('<option value="">-- Chọn giảng viên --</option>');
+                $('#MaGiangVien').empty().append('<option value="">-- Chọn giảng viên --</option>').trigger('change');
                 $('#Quyen').val('');
                 $.post('', formData, function(data) {
                     // Cập nhật danh sách giảng viên từ response
                     var $newContent = $(data);
                     $('#MaGiangVien').html($newContent.find('#MaGiangVien').html());
-                    // Quyền đã được reset ở trên, không cần cập nhật lại từ response
+                    // Khởi tạo lại Select2 cho giảng viên sau khi cập nhật
+                    $('#MaGiangVien').select2({
+                        placeholder: "-- Chọn giảng viên --",
+                        allowClear: false,
+                        width: 'resolve',
+                        language: {
+                            noResults: function() {
+                                return "Không có dữ liệu";
+                            }
+                        }
+                    });
                 });
             });
 
@@ -194,7 +289,9 @@ if (isset($_POST['create'])) {
         });
     </script>
 </body>
-
 </html>
 
-<?php require_once '../Layout/footer.php'; ?>
+<?php
+require_once '../Layout/footer.php';
+mysqli_close($dbc);
+?>

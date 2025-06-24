@@ -1,20 +1,39 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
-require_once '../Layout/header.php'
-?>
+require_once '../Layout/header.php';
+require_once BASE_PATH . './Database/connect-database.php';
 
-<?php
-require BASE_PATH . './Database/connect-database.php';
+// Kiểm tra quyền và lấy MaKhoa của Admin
+$user_id = $_SESSION['user_id'];
+$quyen = $_SESSION['quyen'] ?? 'Không xác định';
+$ma_khoa = null;
+
+if ($quyen === 'Admin') {
+    // Lấy MaKhoa của Admin từ bảng giangvien
+    $query_khoa = "SELECT MaKhoa FROM giangvien WHERE MaGiangVien = ?";
+    $stmt_khoa = $dbc->prepare($query_khoa);
+    $stmt_khoa->bind_param("s", $user_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+
+    if ($row_khoa = $result_khoa->fetch_assoc()) {
+        $ma_khoa = $row_khoa['MaKhoa'];
+    }
+    $stmt_khoa->close();
+}
+
+// Truy vấn dữ liệu
 $query = "
 SELECT hocphan.MaHocPhan, hocphan.TenHocPhan, khoa.TenKhoa, hocphan.TrangThai 
 FROM hocphan
 JOIN khoa ON hocphan.MaKhoa = khoa.MaKhoa 
-WHERE hocphan.TrangThai=0";
+WHERE hocphan.TrangThai = 0";
+if ($quyen === 'Admin' && $ma_khoa) {
+    $query .= " AND hocphan.MaKhoa = '" . mysqli_real_escape_string($dbc, $ma_khoa) . "'";
+}
 $result = $dbc->query($query);
 
 // Xử lý Chuyển trạng Thái
-// Kiểm tra nếu có yêu cầu cập nhật trạng thái
 if (isset($_GET['id']) && isset($_GET['status'])) {
     $id = $_GET['id'];
     $status = $_GET['status'];
@@ -26,7 +45,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     if ($stmt->execute()) {
         // Cập nhật thành công
         $_SESSION['message'] = "Khôi phục thành công";
-        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tạ<i></i>
+        header("Location: " . $_SERVER['PHP_SELF']); // Trở lại trang hiện tại
         ob_end_flush();
         exit();
     } else {
@@ -34,7 +53,6 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
         echo "Lỗi khi cập nhật: " . $stmt->error;
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -43,7 +61,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách công việc</title>
+    <title>Thùng rác học phần</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <!-- DataTables -->
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
@@ -63,14 +81,14 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                         <div class="card">
                             <?php
                             if (isset($_SESSION['message'])) {
-                                echo '<div id="success-message" class="alert alert-success">' . $_SESSION['message'] . '</div>';
+                                echo '<div id="success-message" class="alert alert-success">' . htmlspecialchars($_SESSION['message']) . '</div>';
                                 unset($_SESSION['message']); // Xóa thông báo sau khi hiển thị
                             }
                             ?>
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <strong class="text-blue">THÙNG RÁC<N></N></strong>
+                                        <strong class="text-blue">THÙNG RÁC HỌC PHẦN</strong>
                                     </div>
                                 </div>
                             </div>
@@ -79,10 +97,10 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th style="width: 10%;">Mã học phần</th>
+                                            <th style="width: 15%;">Mã học phần</th>
                                             <th style="width: 40%;">Tên học phần</th>
                                             <th style="width: 20%;">Tên khoa</th>
-                                            <th style="width: 16%;"></th>
+                                            <th style="width: 20%;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -90,15 +108,17 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                                         if (mysqli_num_rows($result) > 0) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
-                                                echo "<td >{$row['MaHocPhan']}</td>";
-                                                echo "<td>{$row['TenHocPhan']}</td>";
-                                                echo "<td>{$row['TenKhoa']}</td>";
+                                                echo "<td>" . htmlspecialchars($row['MaHocPhan']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($row['TenHocPhan']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($row['TenKhoa']) . "</td>";
                                                 echo "<td>";
-                                                echo "<a href='?id={$row['MaHocPhan']}&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a>&nbsp;&nbsp;";
-                                                echo "<a href='delete.php?MaHocPhan={$row[0]}' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a>&nbsp;&nbsp;";
+                                                echo "<a href='?id=" . htmlspecialchars($row['MaHocPhan']) . "&status=1' class='btn-sm btn-info'> <i class='fa fa-undo'></i> Khôi phục </a> ";
+                                                echo "<a href='delete.php?MaHocPhan=" . htmlspecialchars($row['MaHocPhan']) . "' class='btn-sm btn-danger'> <i class='fa fa-trash'></i> Xóa </a> ";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
+                                        } else {
+                                            echo "<tr><td colspan='4' class='text-center'>Không có dữ liệu</td></tr>";
                                         }
                                         ?>
                                     </tbody>
@@ -110,7 +130,6 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                             <!-- /.card-body -->
                         </div>
                         <!-- /.card -->
-                        <!-- /.col -->
                     </div>
                     <!-- /.row -->
                 </div>
@@ -148,24 +167,13 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
                 "lengthChange": false,
                 "autoWidth": false,
             }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
-            $('#example2').DataTable({
-                "paging": true,
-                "lengthChange": false,
-                "searching": false,
-                "ordering": true,
-                "info": true,
-                "autoWidth": false,
-                "responsive": true,
-            });
         });
     </script>
-
 </body>
 
 </html>
 
-
-
 <?php
-require_once '../Layout/footer.php'
+require_once '../Layout/footer.php';
+mysqli_close($dbc);
 ?>

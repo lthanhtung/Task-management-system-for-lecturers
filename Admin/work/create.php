@@ -1,33 +1,129 @@
 <?php
 ob_start();
 require_once '../Layout/header.php';
-require_once BASE_PATH . './Database/connect-database.php';
+require_once BASE_PATH . '/Database/connect-database.php';
+
+// Kiểm tra kết nối cơ sở dữ liệu
+if (!$dbc) {
+    error_log("Database connection failed: " . mysqli_connect_error());
+    die("Database connection failed");
+}
+
+// Function to generate unique MaCongViecHanhChinh with format CVHC-XXX
+function generateMaCongViecHanhChinh($dbc)
+{
+    $prefix = 'CVHC';
+    $sql = "SELECT MaCongViecHanhChinh FROM congviechanhchinh 
+            WHERE MaCongViecHanhChinh LIKE '$prefix-%' 
+            ORDER BY CAST(SUBSTRING(MaCongViecHanhChinh, LENGTH('$prefix-') + 1) AS UNSIGNED) DESC LIMIT 1";
+
+    $result = mysqli_query($dbc, $sql);
+    $sequence = 1; // Default sequence
+
+    if ($result && mysqli_num_rows($result) > 0) {
+        $lastMaCV = mysqli_fetch_assoc($result)['MaCongViecHanhChinh'];
+        $lastSequence = (int)substr($lastMaCV, strlen($prefix) + 1); // Extract number after CVHC-
+        $sequence = $lastSequence + 1;
+    }
+
+    $newMaCV = sprintf("%s-%03d", $prefix, $sequence);
+
+    // Ensure uniqueness
+    while (true) {
+        $checkSql = "SELECT MaCongViecHanhChinh FROM congviechanhchinh WHERE MaCongViecHanhChinh = '$newMaCV'";
+        $checkResult = mysqli_query($dbc, $checkSql);
+        if (mysqli_num_rows($checkResult) == 0) {
+            break; // Unique code found
+        }
+        $sequence++;
+        $newMaCV = sprintf("%s-%03d", $prefix, $sequence);
+    }
+
+    return $newMaCV;
+}
 
 // Function to get lecturers by faculty
 function getGiangVienByKhoa($dbc, $maKhoa)
 {
-    $sql = "SELECT MaGiangVien, HoGiangVien, TenGiangVien FROM giangvien WHERE TrangThai=1 AND MaKhoa='$maKhoa'";
+    $sql = "SELECT MaGiangVien, HoGiangVien, TenGiangVien FROM giangvien WHERE MaKhoa='$maKhoa'";
+    error_log("SQL Query: $sql");
     $result = mysqli_query($dbc, $sql);
+    if (!$result) {
+        error_log("MySQL Error: " . mysqli_error($dbc));
+        return [];
+    }
     $giangvien = [];
     while ($row = mysqli_fetch_assoc($result)) {
         $giangvien[] = $row;
     }
+    error_log("Lecturers returned: " . count($giangvien));
     return $giangvien;
+}
+
+// Function to check for scheduling conflicts
+function checkScheduleConflict($dbc, $maGiangVien, $ngayThucHien, $gioBatDau, $gioKetThuc, $diaDiem)
+{
+    $sql = "SELECT * FROM thongtincongviechanhchinh 
+            WHERE MaGiangVien = '$maGiangVien' 
+            AND NgayThucHien = '$ngayThucHien' 
+            AND DiaDiem = '$diaDiem'";
+    $result = mysqli_query($dbc, $sql);
+    $conflicts = [];
+
+    while ($row = mysqli_fetch_assoc($result)) {
+        $existingStart = strtotime($row['GioBatDau']);
+        $existingEnd = $row['GioKetThuc'] ? strtotime($row['GioKetThuc']) : null;
+        $newStart = strtotime($gioBatDau);
+        $newEnd = $gioKetThuc ? strtotime($gioKetThuc) : null;
+
+        if (!$existingEnd && !$newEnd) {
+            if ($existingStart == $newStart) {
+                $conflicts[] = $row;
+            }
+        } elseif (!$existingEnd) {
+            if ($newStart >= $existingStart) {
+                $conflicts[] = $row;
+            }
+        } elseif (!$newEnd) {
+            if ($existingStart >= $newStart) {
+                $conflicts[] = $row;
+            }
+        } else {
+            if (($newStart >= $existingStart && $newStart <= $existingEnd) ||
+                ($newEnd >= $existingStart && $newEnd <= $existingEnd) ||
+                ($newStart <= $existingStart && $newEnd >= $existingEnd)
+            ) {
+                $conflicts[] = $row;
+            }
+        }
+    }
+    return $conflicts;
 }
 
 // Lấy danh sách khoa
 $khoa_sql = "SELECT * FROM khoa WHERE TrangThai = 1";
 $khoa_result = mysqli_query($dbc, $khoa_sql);
+if (!$khoa_result) {
+    error_log("Error fetching khoa: " . mysqli_error($dbc));
+}
 $khoa_options = [];
 while ($row = mysqli_fetch_array($khoa_result)) {
     $khoa_options[$row['MaKhoa']] = $row['TenKhoa'];
 }
 
-// Xử lý khi chọn khoa
-$selectedKhoa = isset($_POST['Khoa']) ? $_POST['Khoa'] : '';
-$giangVienList = [];
-if (!empty($selectedKhoa)) {
-    $giangVienList = getGiangVienByKhoa($dbc, mysqli_real_escape_string($dbc, $selectedKhoa));
+// Generate MaCongViecHanhChinh for form display
+$autoMaCongViec = generateMaCongViecHanhChinh($dbc);
+
+// Xử lý AJAX để lấy danh sách giảng viên theo khoa
+if (isset($_POST['action']) && $_POST['action'] == 'get_lecturers') {
+    ob_clean();
+    $maKhoa = isset($_POST['maKhoa']) ? mysqli_real_escape_string($dbc, $_POST['maKhoa']) : '';
+    error_log("maKhoa received: $maKhoa");
+    $giangVienList = getGiangVienByKhoa($dbc, $maKhoa);
+    error_log("Lecturers found: " . count($giangVienList));
+    header('Content-Type: application/json');
+    echo json_encode($giangVienList);
+    exit;
 }
 
 // Handle form submission
@@ -36,7 +132,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
 
     // Validate required fields
     if (empty($_POST['MaCongViecHanhChinh'])) {
-        $errors['MaCongViecHanhChinh'] = 'Vui lòng nhập mã công việc';
+        $errors['MaCongViecHanhChinh'] = 'Mã công việc không được để trống';
+    } else {
+        // Validate format of MaCongViecHanhChinh
+        if (!preg_match("/^CVHC-\d{3}$/", $_POST['MaCongViecHanhChinh'])) {
+            $errors['MaCongViecHanhChinh'] = 'Mã công việc không đúng định dạng (CVHC-XXX)';
+        }
     }
     if (empty($_POST['tencongviec'])) {
         $errors['tencongviec'] = 'Vui lòng nhập tên công việc';
@@ -44,37 +145,73 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
     if (empty($_POST['DiaDiem'])) {
         $errors['DiaDiem'] = 'Vui lòng nhập địa điểm';
     }
-    if (empty($_POST['tengiangvien'])) {
+    if (empty($_POST['tengiangvien']) || !array_filter($_POST['tengiangvien'])) {
         $errors['tengiangvien'] = 'Vui lòng chọn ít nhất một giảng viên';
     }
     if (empty($_POST['DateStart'])) {
-        $errors['DateStart'] = 'Vui lòng chọn ngày thực hiện';
+        $errors['DateStart'] = 'Vui lòng nhập ngày thực hiện';
+    } else {
+        $DateStartInput = trim($_POST['DateStart']);
+        if (!preg_match("/^\d{2}\/\d{2}\/\d{4}$/", $DateStartInput)) {
+            $errors['DateStart'] = 'Ngày thực hiện phải có định dạng dd/mm/yyyy';
+        } else {
+            $dateParts = explode('/', $DateStartInput);
+            if (!checkdate($dateParts[1], $dateParts[0], $dateParts[2])) {
+                $errors['DateStart'] = 'Ngày thực hiện không hợp lệ';
+            } else {
+                $dateStart = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+                $dateStart = mysqli_real_escape_string($dbc, $dateStart);
+            }
+        }
     }
     if (empty($_POST['TimeStart'])) {
         $errors['TimeStart'] = 'Vui lòng chọn giờ bắt đầu';
     }
 
-    // Kiểm tra trùng lặp giảng viên trong danh sách được gửi
+    // Kiểm tra trùng lặp giảng viên
     if (!empty($_POST['tengiangvien'])) {
-        $lecturerIds = $_POST['tengiangvien'];
-        $lecturerCount = array_count_values($lecturerIds); // Đếm số lần xuất hiện của mỗi MaGiangVien
+        $lecturerIds = array_filter($_POST['tengiangvien']);
+        $lecturerCount = array_count_values($lecturerIds);
         $duplicateLecturers = [];
 
-        // Tìm các giảng viên bị trùng
         foreach ($lecturerCount as $maGiangVien => $count) {
-            if ($count > 1 && !empty($maGiangVien)) { // Chỉ kiểm tra nếu trùng và không phải rỗng
-                foreach ($giangVienList as $gv) {
-                    if ($gv['MaGiangVien'] == $maGiangVien) {
-                        $duplicateLecturers[] = $gv['HoGiangVien'] . ' ' . $gv['TenGiangVien'];
-                        break;
-                    }
+            if ($count > 1 && !empty($maGiangVien)) {
+                $sql = "SELECT HoGiangVien, TenGiangVien FROM giangvien WHERE MaGiangVien = '$maGiangVien'";
+                $result = mysqli_query($dbc, $sql);
+                if ($row = mysqli_fetch_assoc($result)) {
+                    $duplicateLecturers[] = $row['HoGiangVien'] . ' ' . $row['TenGiangVien'];
                 }
             }
         }
 
-        // Nếu có giảng viên trùng, thêm thông báo lỗi với tên giảng viên
         if (!empty($duplicateLecturers)) {
             $errors['tengiangvien'] = 'Các giảng viên bị trùng lặp: ' . implode(', ', $duplicateLecturers);
+        }
+    }
+
+    // Kiểm tra trùng lịch
+    if (!empty($_POST['tengiangvien']) && empty($errors)) {
+        $timeStart = mysqli_real_escape_string($dbc, $_POST['TimeStart']);
+        $timeEnd = !empty($_POST['TimeEnd']) ? mysqli_real_escape_string($dbc, $_POST['TimeEnd']) : null;
+        $diaDiem = mysqli_real_escape_string($dbc, $_POST['DiaDiem']);
+        $conflictMessages = [];
+
+        foreach ($_POST['tengiangvien'] as $maGiangVien) {
+            if (empty($maGiangVien)) continue;
+            $maGiangVien = mysqli_real_escape_string($dbc, $maGiangVien);
+            $conflicts = checkScheduleConflict($dbc, $maGiangVien, $dateStart, $timeStart, $timeEnd, $diaDiem);
+
+            if (!empty($conflicts)) {
+                $sql = "SELECT HoGiangVien, TenGiangVien FROM giangvien WHERE MaGiangVien = '$maGiangVien'";
+                $result = mysqli_query($dbc, $sql);
+                if ($row = mysqli_fetch_assoc($result)) {
+                    $conflictMessages[] = "Giảng viên {$row['HoGiangVien']} {$row['TenGiangVien']} có lịch trùng tại {$diaDiem} vào ngày {$dateStart}, giờ {$timeStart}" . ($timeEnd ? " - {$timeEnd}" : "");
+                }
+            }
+        }
+
+        if (!empty($conflictMessages)) {
+            $errors['scheduleConflict'] = implode('<br>', $conflictMessages);
         }
     }
 
@@ -83,8 +220,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
         $tenCV = mysqli_real_escape_string($dbc, $_POST['tencongviec']);
         $diaDiem = mysqli_real_escape_string($dbc, $_POST['DiaDiem']);
         $loaiCV = mysqli_real_escape_string($dbc, $_POST['loaicongviec']);
-        $dateStart = mysqli_real_escape_string($dbc, $_POST['DateStart']);
         $timeStart = mysqli_real_escape_string($dbc, $_POST['TimeStart']);
+        $gioKetThuc = !empty($_POST['TimeEnd']) ? mysqli_real_escape_string($dbc, $_POST['TimeEnd']) : null;
 
         mysqli_begin_transaction($dbc);
 
@@ -98,10 +235,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
             }
 
             foreach ($_POST['tengiangvien'] as $maGiangVien) {
+                if (empty($maGiangVien)) continue;
                 $maGiangVien = mysqli_real_escape_string($dbc, $maGiangVien);
+                $gioKetThucValue = $gioKetThuc ? "'$gioKetThuc'" : 'NULL';
                 $q2 = "INSERT INTO thongtincongviechanhchinh 
-                       (MaCongViecHanhChinh, MaGiangVien, LoaiCongViec, NgayThucHien, GioBatDau, DiaDiem) 
-                       VALUES ('$maCV', '$maGiangVien', '$loaiCV', '$dateStart', '$timeStart', '$diaDiem')";
+                       (MaCongViecHanhChinh, MaGiangVien, LoaiCongViec, NgayThucHien, GioBatDau, GioKetThuc, DiaDiem, TrangThai) 
+                       VALUES ('$maCV', '$maGiangVien', '$loaiCV', '$dateStart', '$timeStart', $gioKetThucValue, '$diaDiem', 0)";
                 $r2 = mysqli_query($dbc, $q2);
 
                 if (!$r2) {
@@ -113,8 +252,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
 
             session_start();
             $_SESSION['success_message'] = 'Đã thêm thành công!';
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
             header("Location: index.php");
-            ob_end_flush();
             exit();
         } catch (Exception $e) {
             mysqli_rollback($dbc);
@@ -132,9 +273,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thêm lịch giảng dạy</title>
+    <title>Thêm công việc hành chính</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- Thêm CSS của Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* Tùy chỉnh Select2 để không tràn container */
+        .select2-container {
+            max-width: 100%; /* Ngăn dropdown vượt quá container */
+            box-sizing: border-box; /* Đảm bảo padding và border không làm tràn */
+        }
+
+        .select2-container .select2-selection--single {
+            height: 38px; /* Chiều cao đồng bộ với các input khác */
+            line-height: 38px; /* Căn giữa nội dung */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+
+        /* Cắt ngắn nội dung dài trong dropdown để tránh tràn */
+        .select2-selection__rendered {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Bù padding của container để dropdown hiển thị đúng */
+        .select2-container-parent {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -156,31 +334,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                         <div class="row">
                             <div class="col-md-9">
                                 <div class="form-group">
-                                    <label>Khoa <span class="text-danger">(*)</span></label>
-                                    <div class="col-md-7">
-                                        <select class="form-control" name="Khoa" id="khoaSelect" style="width: auto;">
-                                            <option value="">-- Chọn khoa --</option>
-                                            <?php foreach ($khoa_options as $maKhoa => $tenKhoa): ?>
-                                                <option value="<?php echo $maKhoa; ?>" <?php echo $selectedKhoa == $maKhoa ? 'selected' : ''; ?>>
-                                                    <?php echo $tenKhoa; ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Mã công việc hành chính<span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-10">
-                                        <input class="form-control" type="text" name="MaCongViecHanhChinh"
-                                            value="<?php echo isset($_POST['MaCongViecHanhChinh']) ? htmlspecialchars($_POST['MaCongViecHanhChinh']) : ''; ?>">
-                                        <?php if (isset($errors['MaCongViecHanhChinh'])): ?>
-                                            <small class="text-danger"><?php echo $errors['MaCongViecHanhChinh']; ?></small>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
                                     <label>Tên công việc hành chính<span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
                                         <input class="form-control" type="text" name="tencongviec"
@@ -196,15 +349,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                                     <button type="button" id="addScheduleButton">Thêm giảng viên</button>
                                     <div id="scheduleContainer">
                                         <?php
-                                        if (isset($_POST['tengiangvien']) && is_array($_POST['tengiangvien'])) {
-                                            foreach ($_POST['tengiangvien'] as $gv) {
+                                        if (isset($_POST['tengiangvien']) && is_array($_POST['tengiangvien']) && isset($_POST['khoa'])) {
+                                            foreach ($_POST['tengiangvien'] as $index => $gv) {
+                                                $selectedKhoa = isset($_POST['khoa'][$index]) ? $_POST['khoa'][$index] : '';
+                                                $giangVienList = $selectedKhoa ? getGiangVienByKhoa($dbc, mysqli_real_escape_string($dbc, $selectedKhoa)) : [];
                                                 echo '<div class="row mb-2">';
-                                                echo '<div class="col-md-2">';
-                                                echo '<select class="form-control" name="tengiangvien[]">';
+                                                echo '<div class="col-md-4 select2-container-parent">';
+                                                echo '<select class="form-control khoa-select select2-khoa" name="khoa[]">';
+                                                echo '<option value="">Chọn khoa</option>';
+                                                foreach ($khoa_options as $maKhoa => $tenKhoa) {
+                                                    $selected = ($selectedKhoa == $maKhoa) ? 'selected' : '';
+                                                    echo "<option value='" . htmlspecialchars($maKhoa) . "' $selected>" . htmlspecialchars($tenKhoa) . "</option>";
+                                                }
+                                                echo '</select>';
+                                                echo '</div>';
+                                                echo '<div class="col-md-4 select2-container-parent">';
+                                                echo '<select class="form-control giangvien-select select2-giangvien" name="tengiangvien[]">';
                                                 echo '<option value="">Chọn giảng viên</option>';
                                                 foreach ($giangVienList as $lecturer) {
                                                     $selected = ($gv == $lecturer['MaGiangVien']) ? 'selected' : '';
-                                                    echo "<option value='{$lecturer['MaGiangVien']}' $selected>{$lecturer['HoGiangVien']} {$lecturer['TenGiangVien']}</option>";
+                                                    echo "<option value='" . htmlspecialchars($lecturer['MaGiangVien']) . "' $selected>" . htmlspecialchars($lecturer['HoGiangVien'] . ' ' . $lecturer['TenGiangVien']) . "</option>";
                                                 }
                                                 echo '</select>';
                                                 echo '</div>';
@@ -215,12 +379,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                                             }
                                         } else {
                                             echo '<div class="row mb-2">';
-                                            echo '<div class="col-md-2">';
-                                            echo '<select class="form-control" name="tengiangvien[]">';
-                                            echo '<option value="">Chọn giảng viên</option>';
-                                            foreach ($giangVienList as $lecturer) {
-                                                echo "<option value='{$lecturer['MaGiangVien']}'>{$lecturer['HoGiangVien']} {$lecturer['TenGiangVien']}</option>";
+                                            echo '<div class="col-md-4 select2-container-parent">';
+                                            echo '<select class="form-control khoa-select select2-khoa" name="khoa[]">';
+                                            echo '<option value="">Chọn khoa</option>';
+                                            foreach ($khoa_options as $maKhoa => $tenKhoa) {
+                                                echo "<option value='" . htmlspecialchars($maKhoa) . "'>" . htmlspecialchars($tenKhoa) . "</option>";
                                             }
+                                            echo '</select>';
+                                            echo '</div>';
+                                            echo '<div class="col-md-4 select2-container-parent">';
+                                            echo '<select class="form-control giangvien-select select2-giangvien" name="tengiangvien[]">';
+                                            echo '<option value="">Chọn giảng viên</option>';
                                             echo '</select>';
                                             echo '</div>';
                                             echo '<div class="col-md-2">';
@@ -232,6 +401,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                                     </div>
                                     <?php if (isset($errors['tengiangvien'])): ?>
                                         <small class="text-danger"><?php echo $errors['tengiangvien']; ?></small>
+                                    <?php endif; ?>
+                                    <?php if (isset($errors['scheduleConflict'])): ?>
+                                        <small class="text-danger"><?php echo $errors['scheduleConflict']; ?></small>
                                     <?php endif; ?>
                                 </div>
 
@@ -249,14 +421,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
 
                             <div class="col-md-3">
                                 <div class="form-group">
+                                    <label>Mã công việc hành chính<span class="text-danger"> (*)</span></label>
+                                    <div class="col-md-6">
+                                        <input class="form-control" type="text" name="MaCongViecHanhChinh"
+                                            value="<?php echo isset($_POST['MaCongViecHanhChinh']) ? htmlspecialchars($_POST['MaCongViecHanhChinh']) : htmlspecialchars($autoMaCongViec); ?>"
+                                            readonly>
+                                        <?php if (isset($errors['MaCongViecHanhChinh'])): ?>
+                                            <small class="text-danger"><?php echo $errors['MaCongViecHanhChinh']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label>Loại công việc <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <select class="form-control" name="loaicongviec" style="width: auto;">
+                                        <select class="form-control" name="loaicongviec" style="width: auto;" >
                                             <option value="xuat" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'xuat') ? 'selected' : ''; ?>>Chọn loại công việc</option>
-                                            <option value="xl" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'xl') ? 'selected' : ''; ?>>Xếp loại chất lượng viên chức</option>
-                                            <option value="ct" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'ct') ? 'selected' : ''; ?>>Coi thi</option>
-                                            <option value="pv" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'pv') ? 'selected' : ''; ?>>Phục vụ cộng đồng</option>
-                                            <option value="ck" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'ck') ? 'selected' : ''; ?>>Công việc khác</option>
+                                            <option value="xếp loại" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'xếp loại') ? 'selected' : ''; ?>>Xếp loại chất lượng viên chức</option>
+                                            <option value="coi thi" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'coi thi') ? 'selected' : ''; ?>>Coi thi</option>
+                                            <option value="phục vụ" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'phục vụ') ? 'selected' : ''; ?>>Phục vụ cộng đồng</option>
+                                            <option value="công việc khác" <?php echo (isset($_POST['loaicongviec']) && $_POST['loaicongviec'] == 'công việc khác') ? 'selected' : ''; ?>>Công việc khác</option>
                                         </select>
                                     </div>
                                 </div>
@@ -264,7 +447,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                                 <div class="form-group">
                                     <label>Ngày thực hiện<span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <input type="date" class="form-control" name="DateStart" required style="width: auto;"
+                                        <input type="text" class="form-control" name="DateStart" id="dateStart" required
                                             value="<?php echo isset($_POST['DateStart']) ? htmlspecialchars($_POST['DateStart']) : ''; ?>">
                                         <?php if (isset($errors['DateStart'])): ?>
                                             <small class="text-danger"><?php echo $errors['DateStart']; ?></small>
@@ -275,11 +458,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
                                 <div class="form-group">
                                     <label>Giờ bắt đầu<span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
-                                        <input type="time" class="form-control" name="TimeStart" required style="width: auto;"
+                                        <input type="time" class="form-control" name="TimeStart" required
                                             value="<?php echo isset($_POST['TimeStart']) ? htmlspecialchars($_POST['TimeStart']) : ''; ?>">
                                         <?php if (isset($errors['TimeStart'])): ?>
                                             <small class="text-danger"><?php echo $errors['TimeStart']; ?></small>
                                         <?php endif; ?>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Giờ kết thúc</label>
+                                    <div class="col-md-6">
+                                        <input type="time" class="form-control" name="TimeEnd"
+                                            value="<?php echo isset($_POST['TimeEnd']) ? htmlspecialchars($_POST['TimeEnd']) : ''; ?>">
                                     </div>
                                 </div>
                             </div>
@@ -298,88 +489,170 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['create'])) {
 
     <script src="<?php echo BASE_URL ?>/Public/plugins/jquery/jquery.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/jszip/jszip.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
+    <!-- Thêm JS của Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+
     <script>
         $(document).ready(function() {
             const scheduleContainer = $('#scheduleContainer');
 
-            // Khi chọn khoa
-            $('#khoaSelect').on('change', function(e) {
-                e.preventDefault(); // Ngăn reload trang
-                var formData = $('#addForm').serialize();
+            // Khởi tạo Datepicker
+            $("#dateStart").datepicker({
+                dateFormat: "dd/mm/yy",
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "2000:2030"
+            });
 
-                // Reset danh sách giảng viên ngay lập tức
-                scheduleContainer.empty().append(`
-                    <div class="row mb-2">
-                        <div class="col-md-2">
-                            <select class="form-control" name="tengiangvien[]">
-                                <option value="">Chọn giảng viên</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button type="button" class="btn btn-danger remove-button"><i class="fa fa-trash"></i></button>
-                        </div>
-                    </div>
-                `);
+            // Hàm khởi tạo Select2 cho khoa và giảng viên
+            function initializeSelect2(row) {
+                const khoaSelect = row.find('.khoa-select');
+                const giangVienSelect = row.find('.giangvien-select');
 
-                // Gửi POST để lấy danh sách giảng viên mới
-                $.post('', formData, function(data) {
-                    var $newContent = $(data);
-                    scheduleContainer.html($newContent.find('#scheduleContainer').html());
-                    attachRemoveEvents(); // Gắn lại sự kiện xóa
+                khoaSelect.select2({
+                    placeholder: "Chọn khoa",
+                    allowClear: false,
+                    width: 'resolve',
+                    language: {
+                        noResults: function() {
+                            return "Không có dữ liệu";
+                        }
+                    }
                 });
-            });
 
-            // Chỉ cho phép reload khi nhấn "Lưu [Thêm]"
-            $('#addForm').on('submit', function(e) {
-                if (!$(e.target).find('button[name="create"]').is(':focus')) {
-                    e.preventDefault(); // Ngăn reload trừ khi nhấn nút "Lưu"
-                }
-            });
+                giangVienSelect.select2({
+                    placeholder: "Chọn giảng viên",
+                    allowClear: false,
+                    width: 'resolve',
+                    language: {
+                        noResults: function() {
+                            return "Không có dữ liệu";
+                        }
+                    }
+                });
+            }
 
-            // Hàm gắn sự kiện xóa cho các nút "Remove"
+            // Hàm gắn sự kiện xóa
             function attachRemoveEvents() {
                 $('.remove-button').off('click').on('click', function() {
                     $(this).closest('.row').remove();
                 });
             }
 
-            // Gắn sự kiện xóa cho các nút hiện tại
-            attachRemoveEvents();
+            // Hàm tải danh sách giảng viên
+            function loadLecturers(khoaSelect, giangVienSelect, selectedGiangVien = '') {
+                const maKhoa = khoaSelect.val();
+                console.log('Loading lecturers for maKhoa:', maKhoa);
+                giangVienSelect.empty().append('<option value="">Chọn giảng viên</option>');
+
+                if (maKhoa) {
+                    $.ajax({
+                        url: '<?php echo basename($_SERVER['PHP_SELF']); ?>',
+                        type: 'POST',
+                        data: {
+                            action: 'get_lecturers',
+                            maKhoa: maKhoa
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            console.log('AJAX Success:', data);
+                            if (data.length === 0) {
+                                alert('Không có giảng viên nào cho khoa này.');
+                            }
+                            $.each(data, function(index, lecturer) {
+                                const selected = lecturer.MaGiangVien === selectedGiangVien ? 'selected' : '';
+                                giangVienSelect.append(
+                                    `<option value="${lecturer.MaGiangVien}" ${selected}>${lecturer.HoGiangVien} ${lecturer.TenGiangVien}</option>`
+                                );
+                            });
+                            // Cập nhật Select2 sau khi thêm options
+                            giangVienSelect.trigger('change');
+                        },
+                        error: function(xhr, status, error) {
+                            console.log('AJAX Error:', status, error, xhr.responseText);
+                            alert('Lỗi khi tải danh sách giảng viên. Vui lòng kiểm tra kết nối hoặc liên hệ quản trị viên.');
+                        }
+                    });
+                } else {
+                    giangVienSelect.trigger('change');
+                }
+            }
+
+            // Gắn sự kiện thay đổi khoa
+            scheduleContainer.on('change', '.khoa-select', function() {
+                const row = $(this).closest('.row');
+                const giangVienSelect = row.find('.giangvien-select');
+                console.log('Khoa changed, calling loadLecturers');
+                loadLecturers($(this), giangVienSelect);
+            });
 
             // Thêm giảng viên mới
             $('#addScheduleButton').on('click', function() {
-                const khoaSelected = $('#khoaSelect').val();
-                if (!khoaSelected) {
-                    alert('Vui lòng chọn khoa trước!');
-                    return;
-                }
-
-                var formData = $('#addForm').serialize();
-                $.post('', formData, function(data) {
-                    var $newContent = $(data);
-                    var $lecturerSelect = $newContent.find('#scheduleContainer select').first().clone();
-                    $lecturerSelect.val(''); // Đặt giá trị mặc định là "Chọn giảng viên"
-                    var newRow = `
-                        <div class="row mb-2">
-                            <div class="col-md-2">
-                                ${$lecturerSelect.prop('outerHTML')}
-                            </div>
-                            <div class="col-md-2">
-                                <button type="button" class="btn btn-danger remove-button">
-                                    <i class="fa fa-trash"></i>
-                                </button>
-                            </div>
+                const newRow = $(`
+                    <div class="row mb-2">
+                        <div class="col-md-3 select2-container-parent">
+                            <select class="form-control khoa-select select2-khoa" name="khoa[]">
+                                <option value="">Chọn khoa</option>
+                                <?php foreach ($khoa_options as $maKhoa => $tenKhoa): ?>
+                                    <option value="<?php echo htmlspecialchars($maKhoa); ?>"><?php echo htmlspecialchars($tenKhoa); ?></option>
+                                <?php endforeach; ?>
+                            </select>
                         </div>
-                    `;
-                    scheduleContainer.append(newRow);
-                    attachRemoveEvents();
-                });
+                        <div class="col-md-3 select2-container-parent">
+                            <select class="form-control giangvien-select select2-giangvien" name="tengiangvien[]">
+                                <option value="">Chọn giảng viên</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-danger remove-button">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `);
+                scheduleContainer.append(newRow);
+                initializeSelect2(newRow);
+                attachRemoveEvents();
+            });
+
+            // Gắn sự kiện xóa
+            attachRemoveEvents();
+
+            // Khởi tạo Select2 cho các hàng hiện có
+            scheduleContainer.find('.row').each(function() {
+                initializeSelect2($(this));
+                const khoaSelect = $(this).find('.khoa-select');
+                const giangVienSelect = $(this).find('.giangvien-select');
+                const selectedGiangVien = giangVienSelect.val();
+                if (khoaSelect.val()) {
+                    console.log('Reloading lecturers for maKhoa:', khoaSelect.val());
+                    loadLecturers(khoaSelect, giangVienSelect, selectedGiangVien);
+                }
+            });
+
+            // Ngăn reload không mong muốn
+            $('#addForm').on('submit', function(e) {
+                if (!$(e.target).find('button[name="create"]').is(':focus')) {
+                    e.preventDefault();
+                }
             });
         });
     </script>
 </body>
-
 </html>
 
 <?php

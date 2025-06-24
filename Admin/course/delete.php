@@ -1,8 +1,26 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php';
-require BASE_PATH . './Database/connect-database.php';
+require_once BASE_PATH . './Database/connect-database.php';
+
+// Kiểm tra quyền và lấy MaKhoa của Admin
+$user_id = $_SESSION['user_id'];
+$quyen = $_SESSION['quyen'] ?? 'Không xác định';
+$ma_khoa = null;
+
+if ($quyen === 'Admin') {
+    // Lấy MaKhoa của Admin từ bảng giangvien
+    $query_khoa = "SELECT MaKhoa FROM giangvien WHERE MaGiangVien = ?";
+    $stmt_khoa = $dbc->prepare($query_khoa);
+    $stmt_khoa->bind_param("s", $user_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+
+    if ($row_khoa = $result_khoa->fetch_assoc()) {
+        $ma_khoa = $row_khoa['MaKhoa'];
+    }
+    $stmt_khoa->close();
+}
 
 // Truy vấn chỉ lấy các bản ghi có trạng thái == 0
 $query = "
@@ -10,6 +28,9 @@ SELECT hocphan.MaHocPhan, hocphan.TenHocPhan, khoa.TenKhoa, hocphan.TrangThai
 FROM hocphan
 JOIN khoa ON hocphan.MaKhoa = khoa.MaKhoa 
 WHERE hocphan.TrangThai = 0";
+if ($quyen === 'Admin' && $ma_khoa) {
+    $query .= " AND hocphan.MaKhoa = '" . mysqli_real_escape_string($dbc, $ma_khoa) . "'";
+}
 $result = $dbc->query($query);
 
 // Xử lý yêu cầu xóa
@@ -39,7 +60,7 @@ if (isset($_GET['id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách khoa</title>
+    <title>Xóa học phần</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
@@ -56,14 +77,14 @@ if (isset($_GET['id'])) {
                         <div class="card">
                             <?php
                             if (isset($_SESSION['message'])) {
-                                echo '<div id="success-message" class="alert alert-success">' . $_SESSION['message'] . '</div>';
+                                echo '<div id="success-message" class="alert alert-success">' . htmlspecialchars($_SESSION['message']) . '</div>';
                                 unset($_SESSION['message']); // Xóa thông báo sau khi hiển thị
                             }
                             ?>
                             <div class="card-header">
                                 <div class="row">
                                     <div class="col-md-6">
-                                        <strong class="text-blue">XÓA HỌC PHẦN<N></N></strong>
+                                        <strong class="text-blue">XÓA HỌC PHẦN</strong>
                                     </div>
                                 </div>
                             </div>
@@ -71,10 +92,10 @@ if (isset($_GET['id'])) {
                                 <table id="example1" class="table table-bordered table-hover">
                                     <thead>
                                         <tr>
-                                            <th style="width: 10%;">Mã học phần</th>
+                                            <th style="width: 15%;">Mã học phần</th>
                                             <th style="width: 40%;">Tên học phần</th>
                                             <th style="width: 20%;">Tên khoa</th>
-                                            <th style="width: 16%;"></th>
+                                            <th style="width: 30%;"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -82,14 +103,16 @@ if (isset($_GET['id'])) {
                                         if (mysqli_num_rows($result) > 0) {
                                             while ($row = mysqli_fetch_array($result)) {
                                                 echo "<tr>";
-                                                echo "<td >{$row['MaHocPhan']}</td>";
-                                                echo "<td>{$row['TenHocPhan']}</td>";
-                                                echo "<td>{$row['TenKhoa']}</td>";
+                                                echo "<td>" . htmlspecialchars($row['MaHocPhan']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($row['TenHocPhan']) . "</td>";
+                                                echo "<td>" . htmlspecialchars($row['TenKhoa']) . "</td>";
                                                 echo "<td>";
-                                                echo "<a href='?id={$row['MaHocPhan']}' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
+                                                echo "<a href='?id=" . htmlspecialchars($row['MaHocPhan']) . "' class='btn-sm btn-danger' onclick='return confirm(\"Bạn có chắc chắn muốn xóa không?\");'> <i class='fa fa-trash'></i> Xác Nhận Xóa </a>";
                                                 echo "</td>";
                                                 echo "</tr>";
                                             }
+                                        } else {
+                                            echo "<tr><td colspan='4' class='text-center'>Không có dữ liệu</td></tr>";
                                         }
                                         ?>
                                     </tbody>
@@ -111,6 +134,14 @@ if (isset($_GET['id'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/dataTables.buttons.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.bootstrap4.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/jszip/jszip.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/pdfmake.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/pdfmake/vfs_fonts.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
     <script>
         $(function() {
@@ -118,14 +149,14 @@ if (isset($_GET['id'])) {
                 "responsive": true,
                 "lengthChange": false,
                 "autoWidth": false,
-            });
+            }).buttons().container().appendTo('#example1_wrapper .col-md-6:eq(0)');
         });
     </script>
-
 </body>
 
 </html>
 
 <?php
 require_once '../Layout/footer.php';
+mysqli_close($dbc);
 ?>

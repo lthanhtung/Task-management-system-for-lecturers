@@ -1,11 +1,9 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php'
 ?>
 
 <?php
-require BASE_PATH . './Database/connect-database.php';
 $query = "SELECT * FROM khoa WHERE TrangThai IN (0)";
 $result = $dbc->query($query);
 
@@ -131,7 +129,7 @@ if (isset($_GET['id']) && isset($_GET['status'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
     <!-- AdminLTE App -->
-    <script src="<?php echo BASE_URL ?>/dist/js/adminlte.min.js"></script>
+    <!-- <script src="<?php echo BASE_URL ?>/dist/js/adminlte.min.js"></script> -->
     <!-- AdminLTE for demo purposes -->
     <script src="<?php echo BASE_URL ?>/dist/js/demo.js"></script>
     <!-- Page specific script -->

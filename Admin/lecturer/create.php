@@ -2,16 +2,40 @@
 ob_start();
 require_once '../Layout/header.php';
 
+// Kiểm tra quyền và lấy MaKhoa của Admin
+$user_id = $_SESSION['user_id'];
+$quyen = $_SESSION['quyen'] ?? 'Không xác định';
+$ma_khoa = null;
+$ten_khoa = null;
+
+if ($quyen === 'Admin') {
+    // Lấy MaKhoa và TenKhoa của Admin từ bảng giangvien
+    $query_khoa = "SELECT g.MaKhoa, k.TenKhoa 
+                   FROM giangvien g 
+                   JOIN khoa k ON g.MaKhoa = k.MaKhoa 
+                   WHERE g.MaGiangVien = ?";
+    $stmt_khoa = $dbc->prepare($query_khoa);
+    $stmt_khoa->bind_param("s", $user_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+
+    if ($row_khoa = $result_khoa->fetch_assoc()) {
+        $ma_khoa = $row_khoa['MaKhoa'];
+        $ten_khoa = $row_khoa['TenKhoa'];
+    }
+    $stmt_khoa->close();
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    require_once BASE_PATH . './Database/connect-database.php';
+    require_once BASE_PATH . '/Database/connect-database.php';
     $errors = array();
 
-    // Kiểm tra Mã học Phần
+    // Kiểm tra Mã giảng viên
     if (empty($_POST['MaGiangVien'])) {
         $errors['MaGiangVien'] = 'Mã giảng viên không để trống!';
     } else {
         $MaGiangVien = mysqli_real_escape_string($dbc, trim($_POST['MaGiangVien']));
-        $MaHoSo = $MaGiangVien; // Gán MaHoSo bằng MaGiangVien
+        $MaHoSo = $MaGiangVien;
         $sql = "SELECT * FROM giangvien WHERE MaGiangVien = '$MaGiangVien'";
         $result = mysqli_query($dbc, $sql);
 
@@ -27,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $HoGiangVien = mysqli_real_escape_string($dbc, trim($_POST['HoGiangVien']));
     }
 
-    // Kiểm tra Tên giảng Viên
+    // Kiểm tra Tên giảng viên
     if (empty($_POST['TenGiangVien'])) {
         $errors['TenGiangVien'] = 'Tên giảng viên không để trống';
     } else {
@@ -35,17 +59,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Ngày sinh
-    if (isset($_POST['NgaySinh'])) {
-        $NgaySinh = mysqli_real_escape_string($dbc, trim($_POST['NgaySinh']));
+    $NgaySinh = null; // Khởi tạo mặc định là null
+    if (!empty($_POST['NgaySinh'])) {
+        $NgaySinhInput = trim($_POST['NgaySinh']);
+        if (!preg_match("/^\d{2}\/\d{2}\/\d{4}$/", $NgaySinhInput)) {
+            $errors['NgaySinh'] = 'Ngày sinh phải có định dạng dd/mm/yyyy';
+        } else {
+            $dateParts = explode('/', $NgaySinhInput);
+            if (!checkdate($dateParts[1], $dateParts[0], $dateParts[2])) {
+                $errors['NgaySinh'] = 'Ngày sinh không hợp lệ';
+            } else {
+                $NgaySinh = $dateParts[2] . '-' . $dateParts[1] . '-' . $dateParts[0];
+                $NgaySinh = mysqli_real_escape_string($dbc, $NgaySinh);
+            }
+        }
     }
 
     // Giới tính
     if (isset($_POST['GioiTinh'])) {
-        if ($_POST['GioiTinh'] === 'nam') {
-            $GioiTinh = 1;
-        } else {
-            $GioiTinh = 2;
-        }
+        $GioiTinh = ($_POST['GioiTinh'] === 'nam') ? 1 : 2;
     }
 
     // Kiểm tra Email
@@ -66,9 +98,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     // Kiểm tra Số điện thoại
-    if (empty($_POST['SDT'])) {
-        $errors['SDT'] = 'Số điện thoại không để trống';
-    } else {
+    $SDT = null; // Khởi tạo mặc định là null
+    if (!empty($_POST['SDT'])) {
         $SDT = trim($_POST['SDT']);
         if (!is_numeric($SDT)) {
             $errors['SDT'] = 'Số điện thoại phải là số';
@@ -76,8 +107,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             if (substr($SDT, 0, 1) != '0') {
                 $errors['SDT'] = 'Số điện thoại phải bắt đầu bằng 0';
             } else {
-                if (strlen($SDT) < 11) {
-                    $errors['SDT'] = 'Số điện thoại phải có 11 số';
+                if (strlen($SDT) < 10) {
+                    $errors['SDT'] = 'Số điện thoại phải có ít nhất 10 số';
                 }
             }
         }
@@ -86,92 +117,46 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 
-    // Kiểm tra thứ tiếp sinh viên
-    if (empty($_POST['thutiep'])) {
-        $errors['thutiep'] = 'Vui lòng chọn ngày tiếp sinh viên';
-    } else {
-        $thutiep = mysqli_real_escape_string($dbc, $_POST['thutiep']);
-        if ($_POST['thutiep'] === '2') {
-            $thutiep = 'Thứ Hai';
-        } elseif ($_POST['thutiep'] === '3') {
-            $thutiep = 'Thứ Ba';
-        } elseif ($_POST['thutiep'] === '4') {
-            $thutiep = 'Thứ Tư';
-        } elseif ($_POST['thutiep'] === '5') {
-            $thutiep = 'Thứ Năm';
-        } elseif ($_POST['thutiep'] === '6') {
-            $thutiep = 'Thứ Sáu';
-        } elseif ($_POST['thutiep'] === '7') {
-            $thutiep = 'Thứ Bảy';
-        } elseif ($_POST['thutiep'] === '1') {
-            $thutiep = 'Chủ Nhật';
-        }
-    }
-
-    // Kiểm tra thời gian bắt đầu
-    if (empty($_POST['gio_batdau'])) {
-        $errors['gio_batdau'] = 'Thời gian bắt đầu không để trống';
-    } else {
-        $gio_batdau = mysqli_real_escape_string($dbc, trim($_POST['gio_batdau']));
-    }
-
-    // Kiểm tra thời gian kết thúc
-    if (empty($_POST['gio_ketthuc'])) {
-        $errors['gio_ketthuc'] = 'Thời gian kết thúc không để trống';
-    } else {
-        $gio_ketthuc = mysqli_real_escape_string($dbc, trim($_POST['gio_ketthuc']));
-    }
-
-    // Kiểm tra Địa điểm tiếp sinh viên
-    if (empty($_POST['diadiem'])) {
-        $errors['diadiem'] = 'Địa điểm không để trống';
-    } else {
-        $diadiem = mysqli_real_escape_string($dbc, trim($_POST['diadiem']));
-    }
-
     // Kiểm tra Học vị
     if (isset($_POST['HocVi'])) {
-        if ($_POST['HocVi'] === 'thac') {
-            $hocvi = 'Thạc sĩ';
-        } else {
-            $hocvi = 'Tiến sĩ';
-        }
+        $hocvi = ($_POST['HocVi'] === 'thac') ? 'Thạc sĩ' : 'Tiến sĩ';
     }
 
     // Chức danh
     if (isset($_POST['ChucDanh'])) {
-        if ($_POST['ChucDanh'] === 'trg') {
-            $chucdanh = 'Trợ giảng';
-        } elseif ($_POST['ChucDanh'] === 'gv') {
-            $chucdanh = 'Giảng viên';
-        } elseif ($_POST['ChucDanh'] === 'gvc') {
-            $chucdanh = 'Giảng viên chính';
-        } elseif ($_POST['ChucDanh'] === 'phogs') {
-            $chucdanh = 'Phó giáo sư';
-        } else {
-            $chucdanh = 'Giáo sư';
-        }
+        $chucdanh_options = [
+            'trg' => 'Trợ giảng',
+            'gv' => 'Giảng viên',
+            'gvc' => 'Giảng viên chính',
+            'phogs' => 'Phó giáo sư',
+            'gs' => 'Giáo sư'
+        ];
+        $chucdanh = $chucdanh_options[$_POST['ChucDanh']] ?? 'Giảng viên';
     }
 
     // Khoa
-    if (isset($_POST['Khoa'])) {
+    if ($quyen === 'Admin' && $ma_khoa !== null) {
+        $Khoa = $ma_khoa;
+        $tenKhoa = $ten_khoa;
+    } elseif (isset($_POST['Khoa'])) {
         $Khoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
+    } else {
+        $errors['Khoa'] = 'Vui lòng chọn khoa';
     }
 
     // Kiểm tra trạng thái
     if (isset($_POST['TrangThai'])) {
-        if ($_POST['TrangThai'] == 'day') {
-            $trangthai = 1;
-        } elseif ($_POST['TrangThai'] == 'nghi') {
-            $trangthai = 2;
-        } else {
-            $trangthai = 3;
-        }
+        $trangthai_options = [
+            'day' => 1,
+            'nghi' => 2,
+            'chuyen' => 3
+        ];
+        $trangthai = $trangthai_options[$_POST['TrangThai']] ?? 1;
     }
 
     // Xử lý ảnh đại diện
-    if (isset($_POST['Khoa']) && empty($errors)) {
-        $MaKhoa = mysqli_real_escape_string($dbc, trim($_POST['Khoa']));
+    if (isset($Khoa) && empty($errors)) {
+        $MaKhoa = $Khoa;
         $queryKhoa = "SELECT TenKhoa FROM khoa WHERE MaKhoa = '$MaKhoa' AND TrangThai = 1";
         $resultKhoa = mysqli_query($dbc, $queryKhoa);
 
@@ -210,7 +195,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     $errors['anhdaidien'] = 'Không thể upload ảnh đại diện';
                 }
             } else {
-                // Dùng ảnh mặc định nếu không chọn ảnh
                 $fileName = $HoGiangVien . '_' . $TenGiangVien . '.png';
                 $destination = $facultyPath . '/' . $fileName;
                 $anhdaidien = BASE_URL . '/Public/img/faculty/' . $tenKhoa . '/' . $fileName;
@@ -230,35 +214,26 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     // Nếu không có lỗi thì insert dữ liệu
     if (empty($errors)) {
-        
-        $queryHoSoDanhGia = "INSERT INTO hosodanhgiavienchuc (MaHoSo) 
-        VALUES ('$MaHoSo')";
+        $defaultPassword = '1fFZ8o*J&zTp2L9v';
+        $hashedPassword = password_hash($defaultPassword, PASSWORD_DEFAULT);
 
+        $queryHoSoDanhGia = "INSERT INTO hosodanhgiavienchuc (MaHoSo) VALUES ('$MaHoSo')";
         $queryGiangVien = "INSERT INTO giangvien (MaGiangVien, HoGiangVien, TenGiangVien, NgaySinh, GioiTinh, Email, SoDienThoai, HocVi, ChucDanh, MaKhoa, TrangThai, AnhDaiDien, MaHoSo) 
-        VALUES ('$MaGiangVien', '$HoGiangVien', '$TenGiangVien', '$NgaySinh', '$GioiTinh', '$Email', '$SDT', '$hocvi', '$chucdanh', '$Khoa', '$trangthai', '$anhdaidien', '$MaHoSo')";
-
-        $queryLichTiep = "INSERT INTO lichtiepsinhvien (MaGiangVien, ThuTiepSinhVien, GioBatDau, GioKetThuc, DiaDiem) 
-        VALUES ('$MaGiangVien', '$thutiep', '$gio_batdau', '$gio_ketthuc', '$diadiem')";
-
-        $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan, MatKhau, Quyen) 
-        VALUES ('$MaGiangVien', '1fFZ8o*J&zTp2L9v', 'User')";
-
-        
+                           VALUES ('$MaGiangVien', '$HoGiangVien', '$TenGiangVien', " . ($NgaySinh ? "'$NgaySinh'" : "NULL") . ", '$GioiTinh', '$Email', " . ($SDT ? "'$SDT'" : "NULL") . ", '$hocvi', '$chucdanh', '$Khoa', '$trangthai', '$anhdaidien', '$MaHoSo')";
+        $queryTaiKhoanGiangVien = "INSERT INTO taikhoan (MaTaiKhoan, MatKhau, Quyen) VALUES ('$MaGiangVien', '$hashedPassword', 'User')";
 
         $r1 = @mysqli_query($dbc, $queryHoSoDanhGia);
         $r2 = @mysqli_query($dbc, $queryGiangVien);
-        $r3 = @mysqli_query($dbc, $queryLichTiep);
         $r4 = @mysqli_query($dbc, $queryTaiKhoanGiangVien);
 
-        session_start();
-        if ($r1 && $r2 && $r3 && $r4) {
+        if ($r1 && $r2 && $r4) {
             $_SESSION['success_message'] = 'Đã thêm giảng viên thành công!';
             header("Location: index.php");
             ob_end_flush();
             exit();
         } else {
             echo '<h1>System Error</h1>
-            <p class="error">You could not be registered due to a system error. We apologize for any inconvenience.</p>';
+                  <p class="error">You could not be registered due to a system error. We apologize for any inconvenience.</p>';
             echo '<p>' . mysqli_error($dbc) . '<br /><br />Query: ' . $queryGiangVien . '</p>';
         }
         mysqli_close($dbc);
@@ -273,12 +248,53 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Danh sách công việc</title>
+    <title>Thêm mới giảng viên</title>
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <!-- Thêm CSS của Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <style>
+        /* Tùy chỉnh Select2 để không tràn container */
+        .select2-container {
+            max-width: 100%;
+            /* Ngăn dropdown vượt quá container */
+            box-sizing: border-box;
+            /* Đảm bảo padding và border không làm tràn */
+        }
+
+        .select2-container .select2-selection--single {
+            height: 38px;
+            /* Chiều cao đồng bộ với các input khác */
+            line-height: 38px;
+            /* Căn giữa nội dung */
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+        }
+
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+
+        /* Cắt ngắn nội dung dài trong dropdown để tránh tràn */
+        .select2-selection__rendered {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Bù padding của container để dropdown hiển thị đúng */
+        .select2-container-parent {
+            padding-left: 0;
+            padding-right: 0;
+        }
+    </style>
 </head>
 
 <body>
@@ -302,7 +318,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Mã Giảng Viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="MaGiangVien" value="">
+                                        <input class="form-control" type="text" name="MaGiangVien" value="<?php echo isset($_POST['MaGiangVien']) ? htmlspecialchars($_POST['MaGiangVien']) : ''; ?>">
                                         <?php if (isset($errors['MaGiangVien'])): ?>
                                             <small class="text-danger"><?php echo $errors['MaGiangVien']; ?></small>
                                         <?php endif; ?>
@@ -311,82 +327,47 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <div class="form-group">
                                     <label>Họ Giảng Viên <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="HoGiangVien" value="">
+                                        <input class="form-control" type="text" name="HoGiangVien" value="<?php echo isset($_POST['HoGiangVien']) ? htmlspecialchars($_POST['HoGiangVien']) : ''; ?>">
                                         <?php if (isset($errors['HoGiangVien'])): ?>
                                             <small class="text-danger"><?php echo $errors['HoGiangVien']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Tên Giảng Viên <span class="text-danger"> (*)</span></label>
+                                    <label>Tên Giảng Viên <span class="text-danger"> (*):</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="TenGiangVien" value="">
+                                        <input class="form-control" type="text" name="TenGiangVien" value="<?php echo isset($_POST['TenGiangVien']) ? htmlspecialchars($_POST['TenGiangVien']) : ''; ?>">
                                         <?php if (isset($errors['TenGiangVien'])): ?>
                                             <small class="text-danger"><?php echo $errors['TenGiangVien']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="form-group">
+                                    <label>Ngày sinh</label>
+                                    <div class="col-md-6">
+                                        <input type="text" class="form-control" name="NgaySinh" id="ngaySinh"
+                                            value="<?php echo isset($_POST['NgaySinh']) ? htmlspecialchars($_POST['NgaySinh']) : ''; ?>">
+                                        <?php if (isset($errors['NgaySinh'])): ?>
+                                            <small class="text-danger"><?php echo $errors['NgaySinh']; ?></small>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <div class="form-group">
                                     <label>Email <span class="text-danger"> (*)</span></label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="Email" value="">
+                                        <input class="form-control" type="text" name="Email" value="<?php echo isset($_POST['Email']) ? htmlspecialchars($_POST['Email']) : ''; ?>">
                                         <?php if (isset($errors['Email'])): ?>
                                             <small class="text-danger"><?php echo $errors['Email']; ?></small>
                                         <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="form-group">
-                                    <label>Lịch tiếp sinh viên <span class="text-danger"> (*)</span></label>
-                                    <div class="row">
-                                        <div class="col-md-2">
-                                            <select class="form-control" name="thutiep">
-                                                <option value="">Chọn ngày</option>
-                                                <option value="2">Thứ Hai</option>
-                                                <option value="3">Thứ Ba</option>
-                                                <option value="4">Thứ Tư</option>
-                                                <option value="5">Thứ Năm</option>
-                                                <option value="6">Thứ Sáu</option>
-                                                <option value="7">Thứ Bảy</option>
-                                                <option value="1">Chủ Nhật</option>
-                                            </select>
-                                            <?php if (isset($errors['thutiep'])): ?>
-                                                <small class="text-danger"><?php echo $errors['thutiep']; ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <input class="form-control" type="time" name="gio_batdau" value="">
-                                            <?php if (isset($errors['gio_batdau'])): ?>
-                                                <small class="text-danger"><?php echo $errors['gio_batdau']; ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                        <p style="margin-top: 10px;">
-                                            <i class="fa fa-arrow-right" aria-hidden="true"></i>
-                                        </p>
-                                        <div class="col-md-2">
-                                            <input class="form-control" type="time" name="gio_ketthuc" value="">
-                                            <?php if (isset($errors['gio_ketthuc'])): ?>
-                                                <small class="text-danger"><?php echo $errors['gio_ketthuc']; ?></small>
-                                            <?php endif; ?>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Địa điểm gặp sinh viên <span class="text-danger"> (*)</span></label>
+                                    <label>Số điện thoại</label>
                                     <div class="col-md-10">
-                                        <input class="form-control" type="text" name="diadiem" value="">
-                                        <?php if (isset($errors['diadiem'])): ?>
-                                            <small class="text-danger"><?php echo $errors['diadiem']; ?></small>
+                                        <input class="form-control" type="text" name="SDT" value="<?php echo isset($_POST['SDT']) ? htmlspecialchars($_POST['SDT']) : ''; ?>">
+                                        <?php if (isset($errors['SDT'])): ?>
+                                            <small class="text-danger"><?php echo $errors['SDT']; ?></small>
                                         <?php endif; ?>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Trạng Thái <span class="text-danger">(*)</span></label>
-                                    <div class="col-md-3">
-                                        <select class="form-control" name="TrangThai">
-                                            <option value="day" selected>Đang dạy</option>
-                                            <option value="nghi">Về hưu</option>
-                                            <option value="chuyen">Chuyển công tác</option>
-                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -400,53 +381,52 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                         <?php endif; ?>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Ngày sinh <span class="text-danger">(*)</span></label>
-                                    <div class="col-md-6">
-                                        <input type="date" class="form-control" name="NgaySinh" required style="width: auto;">
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Khoa <span class="text-danger">(*)</span></label>
-                                    <div class="col-md-6">
-                                        <select class="form-control" name="Khoa" style="width: auto;">
-                                            <?php
-                                            require_once BASE_PATH . './Database/connect-database.php';
-                                            $sql = "SELECT * FROM khoa WHERE TrangThai=1";
-                                            $result = mysqli_query($dbc, $sql);
-                                            if (mysqli_num_rows($result) <> 0) {
-                                                while ($row = mysqli_fetch_array($result)) {
-                                                    echo "<option value='$row[MaKhoa]'>$row[TenKhoa]</option>";
+                                <?php if ($quyen !== 'Admin'): ?>
+                                    <div class="form-group">
+                                        <label>Khoa <span class="text-danger">(*)</span></label>
+                                        <div class="col-md-12 select2-container-parent">
+                                            <select class="form-control select2-khoa" name="Khoa">
+                                                <option value="">Chọn khoa</option>
+                                                <?php
+                                                require_once BASE_PATH . '/Database/connect-database.php';
+                                                $sql = "SELECT * FROM khoa WHERE TrangThai=1";
+                                                $result = mysqli_query($dbc, $sql);
+                                                if (mysqli_num_rows($result) > 0) {
+                                                    while ($row = mysqli_fetch_array($result)) {
+                                                        echo "<option value='$row[MaKhoa]' " . (isset($_POST['Khoa']) && $_POST['Khoa'] == $row['MaKhoa'] ? 'selected' : '') . ">$row[TenKhoa]</option>";
+                                                    }
                                                 }
-                                            }
-                                            ?>
-                                        </select>
+                                                ?>
+                                            </select>
+                                            <?php if (isset($errors['Khoa'])): ?>
+                                                <small class="text-danger"><?php echo $errors['Khoa']; ?></small>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
-                                </div>
+                                <?php else: ?>
+                                    <div class="form-group">
+                                        <label>Khoa <span class="text-danger">(*)</span></label>
+                                        <div class="col-md-6">
+                                            <input type="hidden" name="Khoa" value="<?php echo htmlspecialchars($ma_khoa); ?>">
+                                            <p><?php echo htmlspecialchars($ten_khoa); ?></p>
+                                        </div>
+                                    </div>
+                                <?php endif; ?>
                                 <div class="form-group">
                                     <label>Giới tính <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <select class="form-control" name="GioiTinh">
-                                            <option value="nam" selected>Nam</option>
-                                            <option value="nu">Nữ</option>
+                                            <option value="nam" <?php echo (isset($_POST['GioiTinh']) && $_POST['GioiTinh'] == 'nam') ? 'selected' : ''; ?>>Nam</option>
+                                            <option value="nu" <?php echo (isset($_POST['GioiTinh']) && $_POST['GioiTinh'] == 'nu') ? 'selected' : ''; ?>>Nữ</option>
                                         </select>
-                                    </div>
-                                </div>
-                                <div class="form-group">
-                                    <label>Số điện thoại <span class="text-danger"> (*)</span></label>
-                                    <div class="col-md-7">
-                                        <input class="form-control" type="text" name="SDT" value="">
-                                        <?php if (isset($errors['SDT'])): ?>
-                                            <small class="text-danger"><?php echo $errors['SDT']; ?></small>
-                                        <?php endif; ?>
                                     </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Học vị <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <select class="form-control" name="HocVi">
-                                            <option value="thac" selected>Thạc sĩ</option>
-                                            <option value="tien">Tiến sĩ</option>
+                                            <option value="thac" <?php echo (isset($_POST['HocVi']) && $_POST['HocVi'] == 'thac') ? 'selected' : ''; ?>>Thạc sĩ</option>
+                                            <option value="tien" <?php echo (isset($_POST['HocVi']) && $_POST['HocVi'] == 'tien') ? 'selected' : ''; ?>>Tiến sĩ</option>
                                         </select>
                                     </div>
                                 </div>
@@ -454,17 +434,27 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                     <label>Chức danh <span class="text-danger">(*)</span></label>
                                     <div class="col-md-6">
                                         <select class="form-control" name="ChucDanh">
-                                            <option value="trg" selected>Trợ Giảng</option>
-                                            <option value="gv">Giảng viên</option>
-                                            <option value="gvc">Giảng viên chính</option>
-                                            <option value="phogs">Phó giáo sư</option>
-                                            <option value="gs">Giáo sư</option>
+                                            <option value="trg" <?php echo (isset($_POST['ChucDanh']) && $_POST['ChucDanh'] == 'trg') ? 'selected' : ''; ?>>Trợ Giảng</option>
+                                            <option value="gv" <?php echo (isset($_POST['ChucDanh']) && $_POST['ChucDanh'] == 'gv') ? 'selected' : ''; ?>>Giảng viên</option>
+                                            <option value="gvc" <?php echo (isset($_POST['ChucDanh']) && $_POST['ChucDanh'] == 'gvc') ? 'selected' : ''; ?>>Giảng viên chính</option>
+                                            <option value="phogs" <?php echo (isset($_POST['ChucDanh']) && $_POST['ChucDanh'] == 'phogs') ? 'selected' : ''; ?>>Phó giáo sư</option>
+                                            <option value="gs" <?php echo (isset($_POST['ChucDanh']) && $_POST['ChucDanh'] == 'gs') ? 'selected' : ''; ?>>Giáo sư</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Trạng Thái <span class="text-danger">(*)</span></label>
+                                    <div class="col-md-6">
+                                        <select class="form-control" name="TrangThai">
+                                            <option value="day" <?php echo (isset($_POST['TrangThai']) && $_POST['TrangThai'] == 'day') ? 'selected' : ''; ?>>Đang dạy</option>
+                                            <option value="nghi" <?php echo (isset($_POST['TrangThai']) && $_POST['TrangThai'] == 'nghi') ? 'selected' : ''; ?>>Về hưu</option>
+                                            <option value="chuyen" <?php echo (isset($_POST['TrangThai']) && $_POST['TrangThai'] == 'chuyen') ? 'selected' : ''; ?>>Chuyển công tác</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
                             <div class="form-group">
-                                <div class="col-md-offset-2 col-md-12">
+                                <div class="col-md-12">
                                     <button class="btn-sm btn-success" type="submit" name="create"> Lưu [Thêm] <i class="fa fa-save"></i> </button>
                                 </div>
                             </div>
@@ -489,10 +479,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.html5.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.print.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/js/buttons.colVis.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/dist/js/adminlte.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/dist/js/demo.js"></script>
+    <script src="<?php echo BASE_URL ?>/Public/dist/js/demo.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <!-- Thêm JS của Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
     <script>
-        $(function() {
+        $(document).ready(function() {
+            // Khởi tạo Datepicker
+            $("#ngaySinh").datepicker({
+                dateFormat: "dd/mm/yy",
+                changeMonth: true,
+                changeYear: true,
+                yearRange: "1900:2100"
+            });
+
+            // Khởi tạo Select2 cho dropdown Khoa
+            $('.select2-khoa').select2({
+                placeholder: "Chọn khoa",
+                allowClear: false,
+                width: 'resolve',
+                language: {
+                    noResults: function() {
+                        return "Không có dữ liệu";
+                    }
+                }
+            });
+
+            // Khởi tạo DataTable (nếu có)
             $("#example1").DataTable({
                 "responsive": true,
                 "lengthChange": false,
@@ -514,5 +528,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </html>
 
 <?php
-require_once '../Layout/footer.php';
+require_once BASE_PATH . '/Layout/footer.php';
 ?>

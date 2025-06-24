@@ -1,11 +1,9 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên;
 require_once '../Layout/header.php'
 ?>
 
 <?php
-require BASE_PATH . './Database/connect-database.php';
 $query = "SELECT * FROM khoa WHERE TrangThai IN (1, 2)";
 $result = $dbc->query($query);
 

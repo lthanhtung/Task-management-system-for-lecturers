@@ -1,16 +1,45 @@
 <?php
 ob_start();
-session_start(); // Bắt đầu phiên
 require_once '../Layout/header.php';
-require BASE_PATH . './Database/connect-database.php';
 
-// Truy vấn chỉ lấy các bản ghi có trạng thái == 0
+// Kiểm tra quyền và lấy MaKhoa của Admin
+$user_id = $_SESSION['user_id'];
+$quyen = $_SESSION['quyen'] ?? 'Không xác định';
+$ma_khoa = null;
+
+if ($quyen === 'Admin') {
+    // Lấy MaKhoa của Admin từ bảng giangvien
+    $query_khoa = "SELECT MaKhoa FROM giangvien WHERE MaGiangVien = ?";
+    $stmt_khoa = $dbc->prepare($query_khoa);
+    $stmt_khoa->bind_param("s", $user_id);
+    $stmt_khoa->execute();
+    $result_khoa = $stmt_khoa->get_result();
+
+    if ($row_khoa = $result_khoa->fetch_assoc()) {
+        $ma_khoa = $row_khoa['MaKhoa'];
+    }
+    $stmt_khoa->close();
+}
+
+// Xây dựng câu query dựa trên quyền
 $query = "
-SELECT giangvien.*, khoa.TenKhoa
-FROM giangvien
-JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa 
-WHERE giangvien.TrangThai = 0";
-$result = $dbc->query($query);
+    SELECT giangvien.*, khoa.TenKhoa
+    FROM giangvien
+    JOIN khoa ON giangvien.MaKhoa = khoa.MaKhoa 
+    WHERE giangvien.TrangThai = 0";
+
+if ($quyen === 'Admin' && $ma_khoa !== null) {
+    // Nếu là Admin, thêm điều kiện lọc theo MaKhoa
+    $query .= " AND giangvien.MaKhoa = ?";
+    $stmt = $dbc->prepare($query);
+    $stmt->bind_param("s", $ma_khoa);
+} else {
+    // Nếu không phải Admin, lấy tất cả giảng viên
+    $stmt = $dbc->prepare($query);
+}
+
+$stmt->execute();
+$result = $stmt->get_result();
 
 // Xử lý yêu cầu xóa
 if (isset($_GET['id'])) {
@@ -20,7 +49,44 @@ if (isset($_GET['id'])) {
     $dbc->begin_transaction();
 
     try {
-        // Truy vấn để lấy đường dẫn ảnh trước khi xóa (tùy chọn)
+        // Kiểm tra sự tồn tại của MaGiangVien trong các bảng liên quan
+        $checkQueries = [
+            "SELECT COUNT(*) as count FROM thongtincongviechanhchinh WHERE MaGiangVien = ?",
+            "SELECT COUNT(*) as count FROM tailieugiangday WHERE MaGiangVien = ?",
+            "SELECT COUNT(*) as count FROM huongdansinhvien WHERE MaGiangVien = ?",
+            "SELECT COUNT(*) as count FROM lichgiangday WHERE MaGiangVien = ?"
+        ];
+
+        $hasRelatedRecords = false;
+        $relatedTables = [];
+
+        foreach ($checkQueries as $index => $checkQuery) {
+            $stmtCheck = $dbc->prepare($checkQuery);
+            $stmtCheck->bind_param("s", $id);
+            $stmtCheck->execute();
+            $resultCheck = $stmtCheck->get_result();
+            $rowCheck = $resultCheck->fetch_assoc();
+
+            if ($rowCheck['count'] > 0) {
+                $hasRelatedRecords = true;
+                // Gán tên bảng để thông báo lỗi
+                $tableNames = [
+                    'thongtincongviechanhchinh' => 'Thông tin công việc hành chính',
+                    'tailieugiangday' => 'Tài liệu giảng dạy',
+                    'huongdansinhvien' => 'Hướng dẫn sinh viên',
+                    'lichgiangday' => 'Lịch giảng dạy'
+                ];
+                $relatedTables[] = $tableNames[array_keys($tableNames)[$index]];
+            }
+            $stmtCheck->close();
+        }
+
+        // Nếu có bản ghi liên quan, ném ra ngoại lệ
+        if ($hasRelatedRecords) {
+            throw new Exception("Không thể xóa giảng viên vì giảng viên này có dữ liệu liên quan trong các bảng: " . implode(", ", $relatedTables) . ".");
+        }
+
+        // Truy vấn để lấy đường dẫn ảnh trước khi xóa
         $queryImg = $dbc->prepare("SELECT AnhDaiDien FROM giangvien WHERE MaGiangVien = ?");
         $queryImg->bind_param("s", $id);
         $queryImg->execute();
@@ -28,12 +94,17 @@ if (isset($_GET['id'])) {
         $rowImg = $resultImg->fetch_assoc();
         $anhDaiDienPath = BASE_PATH . str_replace(BASE_URL, '', $rowImg['AnhDaiDien']);
 
-        // Xóa file ảnh nếu tồn tại (tùy chọn)
+        // Xóa file ảnh nếu tồn tại
         if (file_exists($anhDaiDienPath)) {
             if (!unlink($anhDaiDienPath)) {
                 throw new Exception("Không thể xóa file ảnh đại diện.");
             }
         }
+
+        // Xóa thông tin từ bảng giangvien_public_settings
+        $stmt0 = $dbc->prepare("DELETE FROM giangvien_public_settings WHERE MaGiangVien = ?");
+        $stmt0->bind_param("s", $id);
+        $stmt0->execute();
 
         // Xóa thông tin từ bảng thongtinhosodanhgia
         $stmt1 = $dbc->prepare("DELETE FROM thongtinhosodanhgia WHERE MaHoSo = ?");
@@ -69,9 +140,14 @@ if (isset($_GET['id'])) {
     } catch (Exception $e) {
         // Nếu có lỗi, rollback giao dịch
         $dbc->rollback();
-        echo "Lỗi khi xóa: " . $e->getMessage();
+        $_SESSION['error'] = "Lỗi khi xóa giảng viên: " . $e->getMessage() . ". Vui lòng kiểm tra dữ liệu liên quan.";
+        header("Location: " . $_SERVER['PHP_SELF']);
+        ob_end_flush();
+        exit();
     }
 }
+
+$stmt->close();
 ?>
 
 <!DOCTYPE html>
@@ -85,7 +161,7 @@ if (isset($_GET['id'])) {
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
     <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/plugins/datatables-buttons/css/buttons.bootstrap4.min.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/dist/css/adminlte.min.css">
+    <link rel="stylesheet" href="<?php echo BASE_URL ?>/Public/distCss/adminlte.min.css">
 </head>
 
 <body>
@@ -98,7 +174,11 @@ if (isset($_GET['id'])) {
                             <?php
                             if (isset($_SESSION['message'])) {
                                 echo '<div id="success-message" class="alert alert-success">' . $_SESSION['message'] . '</div>';
-                                unset($_SESSION['message']); // Xóa thông báo sau khi hiển thị
+                                unset($_SESSION['message']);
+                            }
+                            if (isset($_SESSION['error'])) {
+                                echo '<div id="error-message" class="alert alert-danger">' . $_SESSION['error'] . '</div>';
+                                unset($_SESSION['error']);
                             }
                             ?>
                             <div class="card-header">
@@ -122,12 +202,12 @@ if (isset($_GET['id'])) {
                                     </thead>
                                     <tbody>
                                         <?php
-                                        if (mysqli_num_rows($result) > 0) {
-                                            while ($row = mysqli_fetch_array($result)) {
+                                        if ($result->num_rows > 0) {
+                                            while ($row = $result->fetch_assoc()) {
                                                 echo "<tr>";
                                                 echo "<td style='text-align: center; vertical-align: middle;'>
-                                                <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
-                                                </td>";
+                                                        <img src='{$row['AnhDaiDien']}' alt='Ảnh đại diện' style='width: 100px; height: auto;'>
+                                                      </td>";
                                                 echo "<td> {$row['HoGiangVien']} {$row['TenGiangVien']}</td>";
                                                 echo "<td>{$row['TenKhoa']}</td>";
                                                 echo "<td>{$row['HocVi']}</td>";
@@ -158,7 +238,7 @@ if (isset($_GET['id'])) {
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-bs4/js/dataTables.bootstrap4.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
     <script src="<?php echo BASE_URL ?>/Public/plugins/datatables-responsive/js/responsive.bootstrap4.min.js"></script>
-    <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script>
+    <!-- <script src="<?php echo BASE_URL ?>/Public/dist/js/adminlte.min.js"></script> -->
     <script>
         $(function() {
             $("#example1").DataTable({

@@ -1,50 +1,91 @@
-header{
-    width: 80%;
-    margin: 0 auto;
-    background-color:#2C69A0;
-
+/* Header */
+.header {
+    background: #2C69A0;
+    padding: 15px 0;
 }
 
-.logo{
-    padding: 10px;
+.logo-img {
+    width: 100%;
+    max-width: 100px;
 }
-.chuc-vu{
-    text-align: right;
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-text {
+    flex: 1;
+}
+
+.header-title {
+    font-size: 23px;
+    color: #FFF;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.university-name {
+    color: #FFF;
     font-size: 20px;
-    color: #FFFFFF;
-    
-}
-/* MENU */
-.Menu-container{
-    
-    width: 80%;
-    margin: 0 auto;
-    margin-top: 1px;
-    background-color:#2C69A0;
-    color: #FFFFFF;
+    margin: 5px 0 0;
+    line-height: 1.2;
 }
 
-.menu, .menu-right{
+.header-role {
+    text-align: right;
+}
+
+.chuc-vu {
+    color: #FFF;
+    font-size: 18px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+/* Menu */
+.menu-container {
+    background: #2C69A0;
+    color: #FFF;
+    padding-top: 10px;
+    position: relative;
+    z-index: 1000;
+}
+
+.menu,
+.menu-right {
     list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
-.menu li, .menu-right li{
+.menu li,
+.menu-right li {
     position: relative;
 }
 
-.menu li a, .menu-right li a {
+.menu li a,
+.menu-right li a {
     text-decoration: none;
-    color: white;
+    color: #FFF;
     padding: 10px 15px;
     display: block;
+    font-size: 16px;
+    transition: background 0.3s;
+}
+
+.menu-right .submenu {
+    right: 0;
 }
 
 .menu li:hover {
-    background: #444;
-    
+    background: #1a4a7c;
 }
 
 .submenu {
@@ -54,43 +95,312 @@ header{
     position: absolute;
     top: 100%;
     left: 0;
-    background: #555;
+    background: #1a4a7c;
     display: none;
     min-width: 150px;
-    z-index: 1;
-}
-
-.submenu li {
-    width: 100%;
+    z-index: 1001;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .submenu li a {
     padding: 10px;
-    display: block;
-    color: white;
+    color: #FFF;
+    font-size: 14px;
+}
+
+.submenu li:hover {
+    background: #123a66;
 }
 
 .dropdown:hover .submenu {
     display: block;
-
 }
 
 .menu-right img {
     width: 25px;
     height: auto;
-}
-/* Thông tin giảng viên */
-.Thong-Tin_GV{
-    padding-top: 10px;
-    text-align: right;
-    
+    vertical-align: middle;
+    margin-left: 5px;
+    border-radius: 50%;
 }
 
-/* Lịch */
-footer{
-    background-color: #f1f1f1; 
-    padding: 20px; 
+/* Menu responsive */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #FFF;
+    font-size: 24px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+/* FullCalendar Custom Styles */
+#calendar {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 15px;
+    margin-top: 20px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.fc-toolbar {
+    background: #2C69A0;
+    color: #fff;
+    padding: 10px;
+    border-radius: 6px 6px 0 0;
+    margin-bottom: 15px;
+}
+
+.fc-toolbar .fc-button {
+    background: #fff;
+    color: #2C69A0;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 12px;
+    font-size: 14px;
+    transition: background 0.3s, color 0.3s;
+}
+
+.fc-toolbar .fc-button:hover {
+    background: #e0e0e0;
+    color: #2C69A0;
+}
+
+.fc-toolbar .fc-button.fc-state-active {
+    background: #1a4a7c;
+    color: #fff;
+}
+
+.fc-toolbar h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.fc-day-header {
+    background: #f5f5f5;
+    color: #333;
+    padding: 10px;
+    font-weight: 500;
+    border-bottom: 1px solid #ddd;
+}
+
+.fc-day-number {
+    font-size: 14px;
+    padding: 5px;
+}
+
+.fc-event {
+    border: none;
+    color: #fff;
+    border-radius: 4px;
+    padding: 5px;
+    font-size: 14px;
+    margin: 2px;
+    transition: transform 0.2s;
+}
+
+.fc-event:hover {
+    transform: scale(1.02);
+}
+
+.fc-time-grid .fc-slats td {
+    height: 2em;
+    border-bottom: 1px solid #eee;
+}
+
+.fc-time-grid .fc-axis {
+    width: 50px;
+    font-size: 12px;
+    color: #555;
+}
+
+/* Nội dung */
+.content {
+    padding: 20px 0;
+    position: relative;
+    z-index: 998;
+}
+
+/* Footer */
+footer {
+    background: #2C69A0;
+    padding: 20px;
     text-align: center;
+    font-size: 14px;
+    color: #FFF;
+    width: 100%;
     
 }
 
+footer .container p {
+    margin: 0;
+    padding: 2px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .header-text {
+        flex: 1;
+    }
+
+    .header-role {
+        text-align: right;
+        margin-top: 0;
+    }
+
+    .header-title {
+        font-size: 18px;
+    }
+
+    .university-name {
+        font-size: 16px;
+    }
+
+    .chuc-vu {
+        font-size: 16px;
+    }
+
+    .logo-img {
+        max-width: 80px;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .menu {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .menu li {
+        width: 100%;
+    }
+
+    .submenu {
+        position: static;
+        width: 100%;
+        background: #1a4a7c;
+        z-index: 1001;
+    }
+
+    .menu-right {
+        justify-content: flex-end;
+        width: auto;
+    }
+
+    .menu-right li {
+        width: auto;
+    }
+
+    .menu-right li a {
+        text-align: right;
+    }
+
+    .menu-right .menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .menu-right .menu li a {
+        text-decoration: none;
+        color: #333;
+        padding: 10px;
+        display: flex;
+        align-items: center;
+    }
+
+    .main-menu {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+        /* Định dạng cho menu */
+    .main-menu .menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: none;
+        flex-direction: column;
+    }
+
+    .main-menu .menu.active {
+        display: flex;
+    }
+
+    .main-menu .menu li a {
+        text-decoration: none;
+        padding: 10px;
+        display: block;
+    }
+
+    .submenu {
+        position: static;
+        box-shadow: none;
+    }
+
+    .dropdown:hover .submenu {
+        display: none; /* Vô hiệu hóa hover trên mobile */
+    }
+
+    .menu-toggle {
+        display: block;
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    #calendar {
+        padding: 10px;
+    }
+
+    .fc-toolbar h2 {
+        font-size: 16px;
+    }
+
+    .fc-event {
+        font-size: 12px;
+    }
+
+    .fc-button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-title {
+        font-size: 16px;
+    }
+
+    .university-name {
+        font-size: 14px;
+    }
+
+    .chuc-vu {
+        font-size: 14px;
+    }
+
+    .menu li a,
+    .menu-right li a {
+        font-size: 14px;
+    }
+
+    .submenu li a {
+        font-size: 13px;
+    }
+}

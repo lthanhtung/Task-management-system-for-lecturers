@@ -1,5 +1,46 @@
 <?php
+session_start();
 require_once '../../config.php';
+require_once BASE_PATH . '/Database/connect-database.php';
+
+// Kiểm tra sự tồn tại của user_id trong session
+if (!isset($_SESSION['user_id'])) {
+    // Chuyển hướng về trang đăng nhập
+    header("Location: " . BASE_URL . "/User/index.php");
+    exit();
+}
+
+// Kiểm tra quyền User
+if (isset($_SESSION['quyen']) && $_SESSION['quyen'] === 'User') {
+    $_SESSION['error_message'] = "Bạn không đủ quyền hạn để truy cập vào trang quản trị.";
+    header("Location: " . BASE_URL . "/User/index.php");
+    exit();
+}
+
+// Lấy thông tin giảng viên và quyền từ cơ sở dữ liệu
+$user_id = $_SESSION['user_id'];
+$query = "SELECT g.HoGiangVien, g.TenGiangVien, g.AnhDaiDien, t.Quyen 
+          FROM giangvien g
+          JOIN taikhoan t ON g.MaGiangVien = t.MaTaiKhoan
+          WHERE t.MaTaiKhoan = ?";
+$stmt = mysqli_prepare($dbc, $query);
+mysqli_stmt_bind_param($stmt, "s", $user_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
+if ($result && $row = mysqli_fetch_assoc($result)) {
+    $full_name = $row['HoGiangVien'] . ' ' . $row['TenGiangVien'];
+    $avatar = !empty($row['AnhDaiDien']) ? $row['AnhDaiDien'] : '/Public/img/default_avatar.jpg';
+    $quyen = $row['Quyen']; // Lấy giá trị Quyen từ bảng taikhoan
+} else {
+    // Xử lý trường hợp không tìm thấy dữ liệu
+    $full_name = "Không xác định";
+    $avatar = BASE_URL . '/Public/img/default_avatar.jpg';
+    $quyen = 'Không xác định';
+}
+
+// Đóng statement nhưng không đóng kết nối $dbc
+mysqli_stmt_close($stmt);
 ?>
 
 <!DOCTYPE html>
@@ -52,7 +93,7 @@ require_once '../../config.php';
                     <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="index.php" class="nav-link">Home</a>
+                    <a href="<?php echo BASE_URL ?>/Admin/work/index.php" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
                     <a href="#" class="nav-link">Contact</a>
@@ -61,7 +102,7 @@ require_once '../../config.php';
 
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
-                <!-- Navbar Search -->
+                <!-- Navbar Search
                 <li class="nav-item">
                     <a class="nav-link" data-widget="navbar-search" href="#" role="button">
                         <i class="fas fa-search"></i>
@@ -81,9 +122,9 @@ require_once '../../config.php';
                             </div>
                         </form>
                     </div>
-                </li>
+                </li> -->
 
-                <!-- Messages Dropdown Menu -->
+                <!-- Messages Dropdown Menu
                 <li class="nav-item dropdown">
                     <a class="nav-link" data-toggle="dropdown" href="#">
                         <i class="far fa-comments"></i>
@@ -106,9 +147,9 @@ require_once '../../config.php';
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Messages</a>
                     </div>
-                </li>
+                </li> -->
 
-                <!-- Notifications Dropdown Menu -->
+                <!-- Notifications Dropdown Menu
                 <li class="nav-item dropdown">
                     <a class="nav-link" data-toggle="dropdown" href="#">
                         <i class="far fa-bell"></i>
@@ -124,7 +165,7 @@ require_once '../../config.php';
                         <div class="dropdown-divider"></div>
                         <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
                     </div>
-                </li>
+                </li> -->
 
                 <!-- Dark Mode Toggle Button -->
                 <li class="nav-item">
@@ -138,11 +179,19 @@ require_once '../../config.php';
                         <i class="fas fa-expand-arrows-alt"></i>
                     </a>
                 </li>
+
+                <!-- Logout Button -->
                 <li class="nav-item">
+                    <a class="nav-link" href="<?php echo BASE_URL ?>/User/index.php" role="button" title="Quay lại">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </li>
+
+                <!-- <li class="nav-item">
                     <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
                         <i class="fas fa-th-large"></i>
                     </a>
-                </li>
+                </li> -->
             </ul>
         </nav>
         <!-- /.navbar -->
@@ -150,9 +199,9 @@ require_once '../../config.php';
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="index3.html" class="brand-link">
+            <a href="<?php echo BASE_URL ?>/Admin/work/index.php" class="brand-link">
                 <img src="<?php echo BASE_URL ?>/Public/img/LogoNTU.jpg" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-                <span class="brand-text font-weight-light">Vai trò</span>
+                <span class="brand-text font-weight-light"><?php echo htmlspecialchars($quyen); ?></span>
             </a>
 
             <!-- Sidebar -->
@@ -160,10 +209,10 @@ require_once '../../config.php';
                 <!-- Sidebar user panel -->
                 <div class="user-panel mt-3 pb-3 mb-3 d-flex">
                     <div class="image">
-                        <img src="<?php echo BASE_URL ?>/Public/dist/img/user2-160x160.jpg" class="img-circle elevation-2" alt="User Image">
+                        <img src="<?php echo htmlspecialchars($avatar); ?>" class="img-circle elevation-2" alt="User Image">
                     </div>
                     <div class="info">
-                        <a href="#" class="d-block">TÊN GIẢNG VIÊN</a>
+                        <a href="#" class="d-block"><?php echo htmlspecialchars($full_name); ?></a>
                     </div>
                 </div>
 
@@ -190,13 +239,13 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../work/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/work/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách công việc</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../work/create.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/work/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm công việc</p>
                                     </a>
@@ -204,27 +253,29 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-                        <!-- Menu Khoa -->
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="fa-solid fa-building-columns"></i>
-                                <p>Khoa <i class="right fas fa-angle-left"></i></p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="../faculty/index.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh sách khoa</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="../faculty/create.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Thêm khoa</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        <!-- Menu Khoa (Ẩn nếu Quyen là Admin) -->
+                        <?php if ($quyen !== 'Admin'): ?>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <i class="fa-solid fa-building-columns"></i>
+                                    <p>Khoa <i class="right fas fa-angle-left"></i></p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="<?php echo BASE_URL ?>/Admin/faculty/index.php" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Danh sách khoa</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="<?php echo BASE_URL ?>/Admin/faculty/create.php" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Thêm khoa</p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        <?php endif; ?>
 
                         <!-- Menu Giảng viên -->
                         <li class="nav-item">
@@ -234,19 +285,19 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../lecturer/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/lecturer/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách giảng viên</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../lecturer/create.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/lecturer/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm giảng viên</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../lecturer//faculty-achievements/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/faculty-achievements/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thành tựu giảng viên</p>
                                     </a>
@@ -262,13 +313,13 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../employee-report/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/employee-report/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách hồ sơ</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../employee-report/employee-evaluation.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/employee-report/employee-evaluation.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Đánh giá viên chức</p>
                                     </a>
@@ -276,7 +327,7 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-                        <!-- Menu Học phần -->
+                        <!-- Menu Hướng dẫn sinh viên -->
                         <li class="nav-item">
                             <a href="#" class="nav-link">
                                 <i class="fa-solid fa-graduation-cap"></i>
@@ -284,15 +335,9 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../student-support/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/student-support/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách sinh viên</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="../student-support/progress-report.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Báo cáo tiến độ</p>
                                     </a>
                                 </li>
                             </ul>
@@ -306,13 +351,13 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../course/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/course/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách học phần</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../course/create.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/course/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm học phần</p>
                                     </a>
@@ -328,19 +373,13 @@ require_once '../../config.php';
                             </a>
                             <ul class="nav nav-treeview">
                                 <li class="nav-item">
-                                    <a href="../teaching-schedule/index.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/teaching-schedule/index.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Danh sách lịch học phần</p>
                                     </a>
                                 </li>
                                 <li class="nav-item">
-                                    <a href="../teaching-schedule/index.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Thông tin lịch giảng dạy</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="../teaching-schedule/create.php" class="nav-link">
+                                    <a href="<?php echo BASE_URL ?>/Admin/teaching-schedule/create.php" class="nav-link">
                                         <i class="far fa-circle nav-icon"></i>
                                         <p>Thêm lịch học phần</p>
                                     </a>
@@ -348,44 +387,44 @@ require_once '../../config.php';
                             </ul>
                         </li>
 
-                        <!-- Menu Tài khoản -->
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="fa-solid fa-user"></i>
-                                <p>Tài khoản <i class="right fas fa-angle-left"></i></p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="../account/index.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Danh sách tài khoản</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="../account/User_Role.php" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Phân quyền</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        <!-- Menu Tài khoản (Ẩn nếu Quyen là Admin) -->
+                        <?php if ($quyen !== 'Admin'): ?>
+                            <li class="nav-item">
+                                <a href="#" class="nav-link">
+                                    <i class="fa-solid fa-user"></i>
+                                    <p>Tài khoản <i class="right fas fa-angle-left"></i></p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    <li class="nav-item">
+                                        <a href="<?php echo BASE_URL ?>/Admin/account/index.php" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Danh sách tài khoản</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="<?php echo BASE_URL ?>/Admin/account/User_Role.php" class="nav-link">
+                                            <i class="far fa-circle nav-icon"></i>
+                                            <p>Phân quyền</p>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        <?php endif; ?>
 
-                        <!--Phàn còn lại của menu-->
+                        <!-- Phần còn lại của menu -->
                         <li class="nav-header">LABELS</li>
-
                         <li class="nav-item">
-                            <a href="../teaching-resources/index.php" class="nav-link">
+                            <a href="<?php echo BASE_URL ?>/Admin/teaching-resources/index.php" class="nav-link">
                                 <i class="fa-solid fa-file"></i>
                                 <p class="text">Tài liệu giảng dạy</p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="../scientific-research/index.php" class="nav-link">
+                            <a href="<?php echo BASE_URL ?>/Admin/scientific-research/index.php" class="nav-link">
                                 <i class="fa-solid fa-microscope"></i>
-                                <p class="text">Nguyên cứu khoa học</p>
+                                <p class="text">Nghiên cứu khoa học</p>
                             </a>
                         </li>
-
                     </ul>
                 </nav>
                 <!-- /.sidebar-menu -->
@@ -437,13 +476,12 @@ require_once '../../config.php';
             const darkModeToggle = $('#darkModeToggle');
             const body = $('body');
             const icon = darkModeToggle.find('i');
-            const navbar = $('.main-header.navbar'); // Chọn thẻ nav
+            const navbar = $('.main-header.navbar');
 
             // Kiểm tra trạng thái dark mode từ localStorage
             if (localStorage.getItem('darkMode') === 'enabled') {
                 body.addClass('dark-mode');
                 icon.removeClass('fa-moon').addClass('fa-sun');
-                // Xóa class navbar-white và navbar-light khi dark mode được bật
                 navbar.removeClass('navbar-white navbar-light');
             }
 
@@ -455,12 +493,10 @@ require_once '../../config.php';
                 if (body.hasClass('dark-mode')) {
                     localStorage.setItem('darkMode', 'enabled');
                     icon.removeClass('fa-moon').addClass('fa-sun');
-                    // Xóa class navbar-white và navbar-light khi chuyển sang dark mode
                     navbar.removeClass('navbar-white navbar-light');
                 } else {
                     localStorage.setItem('darkMode', 'disabled');
                     icon.removeClass('fa-sun').addClass('fa-moon');
-                    // Thêm lại class navbar-white và navbar-light khi chuyển về light mode
                     navbar.addClass('navbar-white navbar-light');
                 }
             });
