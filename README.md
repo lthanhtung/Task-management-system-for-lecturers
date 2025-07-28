@@ -6,7 +6,7 @@
 |-----------------|---------|---------------|
 | HTML, CSS, JS   | PHP     | MySQL         |
 
-## Một số hình ảnh trong Dự án
+## 📸 Một số hình ảnh giao diện
 ***Trang đang nhập và quên mật khẩu***  
 - **Trang đăng nhập**:
 <img width="800" alt="image" src="https://github.com/user-attachments/assets/0fae9b0f-3ecb-421d-bb46-e57c3c58ea64" />
