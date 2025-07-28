@@ -1,7 +1,7 @@
 # Hệ thống quản lý công việc cho giảng viên trường đại học Nha Trang
 . Giảng viên hướng dẫn:
-+ **ThS. Bùi Chí Thành**  
-***Công cụ thực hiện***
++ **ThS. Bùi Chí Thành**
+Công cụ thực hiện
 + Fontend: **HTML & CSS & JavaScript**
 + Backend: **PHP**
 + Database: MySQL
