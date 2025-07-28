@@ -2,7 +2,7 @@
 **Giảng viên hướng dẫn:**
 + **ThS. Bùi Chí Thành**
 
-**Công cụ thực hiện:**
+## 🔧 Công nghệ sử dụng
 + Frontend: **HTML & CSS & JavaScript**
 + Backend: **PHP**
 + Database: **MySQL**
