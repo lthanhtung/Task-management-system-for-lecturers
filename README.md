@@ -3,9 +3,9 @@
 + **ThS. Bùi Chí Thành**
 
 ## 🔧 Công nghệ sử dụng
-+ Frontend: **HTML & CSS & JavaScript**
-+ Backend: **PHP**
-+ Database: **MySQL**
+| Frontend        | Backend | Cơ sở dữ liệu |
+|-----------------|---------|---------------|
+| HTML, CSS, JS   | PHP     | MySQL         |
 
 ## Một số hình ảnh trong Dự án
 ***Trang đang nhập và quên mật khẩu***  
