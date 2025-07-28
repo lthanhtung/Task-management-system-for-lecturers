@@ -2,7 +2,7 @@
 ## 👤 **Giảng viên hướng dẫn**: *ThS. Bùi Chí Thành*
 
 ## 🔧 Công nghệ sử dụng
-| Frontend        | Backend | Cơ sở dữ liệu |
+|📱 Frontend        |⚙️ Backend |  🗄️Cơ sở dữ liệu |
 |-----------------|---------|---------------|
 | HTML, CSS, JS   | PHP     | MySQL         |
 
