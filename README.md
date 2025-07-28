@@ -1,4 +1,4 @@
-# 🗂️ Hệ thống quản lý công việc cho giảng viên trường Đại học Nha Trang
+# 🗂️ Hệ thống quản lý công việc giảng viên trường Đại học Nha Trang
 ## 👤 **Giảng viên hướng dẫn**: *ThS. Bùi Chí Thành*
 
 ## 🔧 Công nghệ sử dụng
