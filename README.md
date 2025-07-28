@@ -9,6 +9,7 @@
 
 ## Hình ảnh Dự án
 ***Trang đang nhập và quên mật khẩu***  
-- Trang đăng nhập:<img width="800" alt="image" src="https://github.com/user-attachments/assets/0fae9b0f-3ecb-421d-bb46-e57c3c58ea64" />
+- Trang đăng nhập:
+<img width="800" alt="image" src="https://github.com/user-attachments/assets/0fae9b0f-3ecb-421d-bb46-e57c3c58ea64" />
 
 
